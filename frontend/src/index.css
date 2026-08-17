@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", sans-serif;
+  --color-ink: #15222d;
+  --color-muted: #60717d;
+  --color-brand: #087f78;
+  --color-brand-dark: #086761;
+  --color-brand-soft: #e6f4f2;
+}
+
+@layer base {
+  html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
+  body { @apply m-0 min-w-80 bg-[#f3f6f7] font-sans text-ink antialiased; }
+  button, a { -webkit-tap-highlight-color: transparent; }
+  button { @apply cursor-pointer; }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { @apply outline-3 outline-offset-2 outline-blue-300; }
+}
