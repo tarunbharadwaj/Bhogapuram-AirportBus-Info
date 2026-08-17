@@ -1,21 +1,41 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f4f7f9" />
-    <meta name="description" content="Find the right AeroExpress bus from Visakhapatnam to Bhogapuram Airport based on where you are and when your flight leaves." />
-    <meta property="og:title" content="Bhogapuram Airport Bus Planner" />
-    <meta property="og:description" content="Timings, stops, fares and flight-aware AeroExpress bus recommendations." />
-    <meta property="og:type" content="website" />
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="theme-color" content="#f4f7f9" />
+		<meta
+			name="description"
+			content="Find the right AeroExpress bus from Visakhapatnam to Bhogapuram Airport based on where you are and when your flight leaves."
+		/>
+		<meta property="og:title" content="Bhogapuram Airport Bus Planner" />
+		<meta
+			property="og:description"
+			content="Timings, stops, fares and flight-aware AeroExpress bus recommendations."
+		/>
+		<meta property="og:type" content="website" />
     <link rel="icon" type="image/svg+xml" href="/bus-favicon.svg" />
     <title>Bhogapuram Airport Bus — AeroExpress Planner</title>
-    <script type="application/ld+json">
-      {"@context":"https://schema.org","@type":"WebApplication","name":"Bhogapuram Airport Bus Planner","applicationCategory":"TravelApplication","operatingSystem":"Web"}
+    <script>
+      (() => {
+        const savedTheme = localStorage.getItem('theme');
+        const useDark = savedTheme === 'dark' || (!savedTheme && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', useDark);
+        document.querySelector('meta[name="theme-color"]').setAttribute('content', useDark ? '#0b1116' : '#f4f7f9');
+      })();
     </script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@type": "WebApplication",
+				"name": "Bhogapuram Airport Bus Planner",
+				"applicationCategory": "TravelApplication",
+				"operatingSystem": "Web"
+			}
+		</script>
+	</head>
+	<body>
+		<div id="root"></div>
+		<script type="module" src="/src/main.jsx"></script>
+	</body>
 </html>
