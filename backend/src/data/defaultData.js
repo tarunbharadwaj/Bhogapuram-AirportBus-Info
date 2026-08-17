@@ -23,6 +23,7 @@ export const DEFAULT_DATA = {
   status: {
     verifiedDate: '2026-08-17',
     announcement: 'AeroExpress is a new service. Intermediate timings are reference estimates—please confirm before travel.',
+    announcementVisible: true,
     dataQuality: 'reference',
   },
   airport: AIRPORT,

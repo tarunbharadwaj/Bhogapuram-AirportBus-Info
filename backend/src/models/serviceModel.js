@@ -36,6 +36,7 @@ export class ServiceModel {
   #normalize(payload) {
     const next = clone(payload);
     if (!next.status || !Array.isArray(next.routes)) throw new Error('Invalid service data.');
+    if (typeof next.status.announcementVisible !== 'boolean') next.status.announcementVisible = true;
 
     for (const route of next.routes) {
       const { start, end, frequency } = route.schedule || {};
