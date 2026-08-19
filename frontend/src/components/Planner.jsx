@@ -7,11 +7,14 @@ import {
 	LocateFixed,
 	LockKeyhole,
 	MapPin,
+	Settings2,
 	ShieldCheck,
 	Sparkles
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api.js';
+import { findNearestBoardingPoint } from '../lib/nearestStop.js';
+import { recommendTrip } from '../lib/recommendTrip.js';
 import Recommendation from './Recommendation.jsx';
 
 const inputShell =
@@ -42,9 +45,10 @@ const currentMinute = () => {
 	return now;
 };
 
-export default function Planner() {
+export default function Planner({ service, backendReady }) {
 	const autoLocateAttempted = useRef(false);
 	const [coordinates, setCoordinates] = useState(null);
+	const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
 	const [flightType, setFlightType] = useState('domestic');
 	const [locating, setLocating] = useState(false);
 	const [nearestMessage, setNearestMessage] = useState('');
@@ -77,19 +81,32 @@ export default function Planner() {
 		setError('');
 	};
 
-	const locate = useCallback(() => {
+	const locate = useCallback(async () => {
 		if (!navigator.geolocation)
 			return setError('Location detection is not supported in this browser.');
 		setLocating(true);
 		setError('');
+
+		if (navigator.permissions?.query) {
+			try {
+				const permission = await navigator.permissions.query({ name: 'geolocation' });
+				if (permission.state === 'denied') {
+					setLocationPermissionDenied(true);
+					setLocating(false);
+					return;
+				}
+			} catch {
+				// Some mobile browsers expose geolocation without supporting this query.
+			}
+		}
+
 		navigator.geolocation.getCurrentPosition(
-			async ({ coords }) => {
+			({ coords }) => {
 				try {
 					const point = { lat: coords.latitude, lng: coords.longitude };
-					const nearest = await api(
-						`/api/nearest?lat=${point.lat}&lng=${point.lng}`
-					);
+					const nearest = findNearestBoardingPoint(service, point);
 					setCoordinates(point);
+					setLocationPermissionDenied(false);
 					const accuracyNote =
 						coords.accuracy > 1000
 							? ' Your phone shared an approximate location; enable Precise Location for a better match.'
@@ -104,8 +121,13 @@ export default function Planner() {
 				}
 			},
 			(locationError) => {
+				if (locationError.code === 1) {
+					setLocationPermissionDenied(true);
+					setError('');
+					setLocating(false);
+					return;
+				}
 				const messages = {
-					1: 'Location access is Off. Either allow it in your browser site settings then turn on location services and try again OR open this site in a new tab and allow location access when prompted.',
 					2: 'Turn on Location Services on your phone, then try again.',
 					3: 'Location took too long. Turn on Location Services and try again.'
 				};
@@ -117,7 +139,7 @@ export default function Planner() {
 			},
 			{ enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 }
 		);
-	}, []);
+	}, [service]);
 
 	useEffect(() => {
 		if (
@@ -128,18 +150,35 @@ export default function Planner() {
 			return;
 
 		let cancelled = false;
+		let permissionStatus;
+		const syncPermission = () => {
+			if (cancelled || !permissionStatus) return;
+			if (permissionStatus.state === 'denied') {
+				autoLocateAttempted.current = false;
+				setLocationPermissionDenied(true);
+				return;
+			}
+			setLocationPermissionDenied(false);
+			if (
+				permissionStatus.state === 'granted' &&
+				!autoLocateAttempted.current
+			) {
+				autoLocateAttempted.current = true;
+				locate();
+			}
+		};
 		navigator.permissions
 			.query({ name: 'geolocation' })
 			.then((permission) => {
-				if (!cancelled && permission.state === 'granted') {
-					autoLocateAttempted.current = true;
-					locate();
-				}
+				permissionStatus = permission;
+				syncPermission();
+				permissionStatus.addEventListener?.('change', syncPermission);
 			})
 			.catch(() => {});
 
 		return () => {
 			cancelled = true;
+			permissionStatus?.removeEventListener?.('change', syncPermission);
 		};
 	}, [locate]);
 
@@ -158,15 +197,21 @@ export default function Planner() {
 		setError('');
 		setResult(null);
 		try {
-			const recommendation = await api('/api/recommendations', {
-				method: 'POST',
-				body: JSON.stringify({
-					coordinates,
-					flightTime: selectedDeparture.toISOString(),
-					flightType
-				})
-			});
+			const request = {
+				coordinates,
+				flightTime: selectedDeparture.toISOString(),
+				flightType
+			};
+			const recommendation = recommendTrip(service, request);
 			setResult(recommendation);
+			if (backendReady) {
+				api('/api/recommendations', {
+					method: 'POST',
+					body: JSON.stringify(request)
+				})
+					.then(setResult)
+					.catch(() => {});
+			}
 			requestAnimationFrame(() =>
 				document
 					.getElementById('recommendation')
@@ -252,14 +297,18 @@ export default function Planner() {
 								? 'Capturing your location…'
 								: coordinates
 									? 'Location captured'
-									: 'Use my location'}
+									: locationPermissionDenied
+										? 'Location access blocked'
+										: 'Use my location'}
 						</strong>
 						<small className="text-[.68rem] leading-relaxed text-muted">
 							{locating
 								? 'Waiting for browser permission'
 								: coordinates
 									? nearestMessage
-									: 'Turn on phone location and allow access to find your nearest Aero Express stop'}
+									: locationPermissionDenied
+										? 'Allow location in your browser settings, then try again'
+										: 'Turn on phone location and allow access to find your nearest Aero Express stop'}
 						</small>
 					</span>
 					{coordinates && !locating && (
@@ -268,6 +317,34 @@ export default function Planner() {
 						</span>
 					)}
 				</button>
+				{locationPermissionDenied && !coordinates && (
+					<div
+						className="mt-3 rounded-2xl border border-amber-300/60 bg-amber-50 p-4 text-left text-amber-950 dark:border-amber-300/15 dark:bg-amber-300/8 dark:text-amber-100"
+						role="alert"
+					>
+						<div className="flex items-start gap-3">
+							<span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-200/60 text-amber-800 dark:bg-amber-200/10 dark:text-amber-200">
+								<Settings2 size={18} aria-hidden="true" />
+							</span>
+							<div>
+								<strong className="text-sm">Allow location for this website</strong>
+								<ol className="mt-2 list-decimal space-y-1 pl-4 text-[.7rem] leading-relaxed text-amber-900/75 dark:text-amber-100/70">
+									<li>Tap the site-controls icon beside your browser address bar.</li>
+									<li>Open Permissions or Website Settings, then set Location to Allow.</li>
+									<li>Make sure Location Services are turned on for your phone.</li>
+								</ol>
+							</div>
+						</div>
+						<button
+							type="button"
+							className="mt-3 flex min-h-10 w-full items-center justify-center rounded-xl bg-amber-900 px-4 text-xs font-bold text-white transition active:scale-[.98] dark:bg-amber-200 dark:text-amber-950"
+							onClick={locate}
+							disabled={locating}
+						>
+							{locating ? 'Checking permission…' : 'I allowed it — try again'}
+						</button>
+					</div>
+				)}
 				<label className={fieldLabel} htmlFor="flight-date">
 					When does your flight depart?
 				</label>

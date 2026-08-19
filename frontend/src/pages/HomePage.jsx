@@ -5,13 +5,13 @@ import { Confidence, Footer, QuickFacts } from '../components/SiteSections.jsx';
 import StatusNotice from '../components/StatusNotice.jsx';
 import Timetable from '../components/Timetable.jsx';
 
-export default function HomePage({ service }) {
+export default function HomePage({ service, backendReady }) {
 	return (
 		<div id="top">
 			<Header />
 			<main className="overflow-hidden">
 				{/* <StatusNotice status={service.status} /> */}
-				<Planner service={service} />
+				<Planner service={service} backendReady={backendReady} />
 				{/* <QuickFacts service={service} /> */}
 				<Timetable service={service} />
 				<Routes service={service} />

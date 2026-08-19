@@ -1,7 +1,21 @@
 import { BusFront, ChevronDown, CircleAlert, MapPin } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { api } from '../lib/api.js';
+import { useEffect, useMemo, useState } from 'react';
 import { formatTime } from '../lib/format.js';
+
+const buildTimetable = (service, routeId, stopId, direction) => {
+	const route = service.routes.find((item) => item.id === routeId) || service.routes[0];
+	const stop = route.stops.find((item) => item.id === stopId) || route.stops[0];
+	const now = new Date();
+	const services = route.times.map((time) => {
+		const [hours, minutes] = time.split(':').map(Number);
+		const departure = new Date(now);
+		departure.setHours(hours, minutes, 0, 0);
+		if (direction === 'to-airport') departure.setMinutes(departure.getMinutes() + stop.offset);
+		const arrival = new Date(departure.getTime() + stop.journeyMinutes * 60_000);
+		return { departure: departure.toISOString(), arrival: arrival.toISOString() };
+	});
+	return { route, stop, direction, services, verifiedDate: service.status.verifiedDate };
+};
 
 export default function Timetable({ service }) {
 	const [routeId, setRouteId] = useState('asr-1');
@@ -9,25 +23,20 @@ export default function Timetable({ service }) {
 	const route =
 		service.routes.find((item) => item.id === routeId) || service.routes[0];
 	const [stopId, setStopId] = useState(route.stops[0].id);
-	const [data, setData] = useState(null);
+	const data = useMemo(
+		() => buildTimetable(service, routeId, stopId, direction),
+		[service, routeId, stopId, direction]
+	);
 
 	useEffect(() => {
 		if (!route.stops.some((stop) => stop.id === stopId))
 			setStopId(route.stops[0].id);
 	}, [route, stopId]);
-	useEffect(() => {
-		api(
-			`/api/timetable?routeId=${routeId}&stopId=${stopId}&direction=${direction}`
-		)
-			.then(setData)
-			.catch(() => setData(null));
-	}, [routeId, stopId, direction]);
-
 	const upcoming =
-		data?.services
+		data.services
 			.filter((item) => new Date(item.departure).getTime() >= Date.now())
-			.slice(0, 5) || [];
-	const visible = upcoming.length ? upcoming : data?.services.slice(0, 5) || [];
+			.slice(0, 5);
+	const visible = upcoming.length ? upcoming : data.services.slice(0, 5);
 	const toggle = (active) =>
 		`h-10 rounded-lg text-xs font-bold transition ${active ? 'bg-white text-ink shadow-sm dark:bg-white/12' : 'text-muted'}`;
 
