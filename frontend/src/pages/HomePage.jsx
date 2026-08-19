@@ -12,7 +12,7 @@ export default function HomePage({ service }) {
 			<main className="overflow-hidden">
 				{/* <StatusNotice status={service.status} /> */}
 				<Planner service={service} />
-				<QuickFacts service={service} />
+				{/* <QuickFacts service={service} /> */}
 				<Timetable service={service} />
 				<Routes service={service} />
 				<Confidence />

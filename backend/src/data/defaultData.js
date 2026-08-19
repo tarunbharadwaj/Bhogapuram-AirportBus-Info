@@ -34,22 +34,73 @@ export const DEFAULT_DATA = {
 		dataQuality: 'reference'
 	},
 	airport: AIRPORT,
+	// locations: [
+	// 	{ id: 'mvp-colony', name: 'MVP Colony', lat: 17.7424, lng: 83.336 },
+	// 	{ id: 'siripuram', name: 'Siripuram', lat: 17.7206, lng: 83.3154 },
+	// 	{ id: 'rtc-complex', name: 'RTC Complex', lat: 17.7251, lng: 83.3019 },
+	// 	{
+	// 		id: 'railway-station',
+	// 		name: 'Visakhapatnam Railway Station',
+	// 		lat: 17.7215,
+	// 		lng: 83.2897
+	// 	},
+	// 	{ id: 'nad', name: 'NAD Junction', lat: 17.7431, lng: 83.2316 },
+	// 	{ id: 'gajuwaka', name: 'Gajuwaka', lat: 17.6908, lng: 83.2159 },
+	// 	{ id: 'kurmannapalem', name: 'Kurmannapalem', lat: 17.6862, lng: 83.1718 },
+	// 	{ id: 'madhurawada', name: 'Madhurawada', lat: 17.8077, lng: 83.3511 },
+	// 	{ id: 'rushikonda', name: 'Rushikonda', lat: 17.7834, lng: 83.3858 },
+	// 	{ id: 'anandapuram', name: 'Anandapuram', lat: 17.891, lng: 83.3941 }
+	// ],
 	locations: [
 		{ id: 'mvp-colony', name: 'MVP Colony', lat: 17.7424, lng: 83.336 },
+
 		{ id: 'siripuram', name: 'Siripuram', lat: 17.7206, lng: 83.3154 },
+
 		{ id: 'rtc-complex', name: 'RTC Complex', lat: 17.7251, lng: 83.3019 },
+
 		{
 			id: 'railway-station',
 			name: 'Visakhapatnam Railway Station',
-			lat: 17.7215,
-			lng: 83.2897
+			lat: 17.72193,
+			lng: 83.29128
 		},
-		{ id: 'nad', name: 'NAD Junction', lat: 17.7431, lng: 83.2316 },
-		{ id: 'gajuwaka', name: 'Gajuwaka', lat: 17.6908, lng: 83.2159 },
+
+		{
+			id: 'nad',
+			name: 'NAD Junction',
+			lat: 17.744512,
+			lng: 83.236829
+		},
+
+		{
+			id: 'gajuwaka',
+			name: 'Old Gajuwaka',
+			lat: 17.68605,
+			lng: 83.20421
+		},
+
 		{ id: 'kurmannapalem', name: 'Kurmannapalem', lat: 17.6862, lng: 83.1718 },
-		{ id: 'madhurawada', name: 'Madhurawada', lat: 17.8077, lng: 83.3511 },
-		{ id: 'rushikonda', name: 'Rushikonda', lat: 17.7834, lng: 83.3858 },
-		{ id: 'anandapuram', name: 'Anandapuram', lat: 17.891, lng: 83.3941 }
+
+		{
+			id: 'madhurawada',
+			name: 'Madhurawada',
+			lat: 17.81864,
+			lng: 83.35701
+		},
+
+		{
+			id: 'rushikonda',
+			name: 'Rushikonda',
+			lat: 17.78462,
+			lng: 83.38351
+		},
+
+		{
+			id: 'anandapuram',
+			name: 'Anandapuram',
+			lat: 17.89482,
+			lng: 83.37695
+		}
 	],
 	routes: [
 		{
@@ -65,9 +116,10 @@ export const DEFAULT_DATA = {
 				{
 					id: 'gajuwaka-stop',
 					name: 'Gajuwaka',
-					landmark: 'Gajuwaka bus station',
-					lat: 17.6908,
-					lng: 83.2159,
+					landmark: 'Old Gajuwaka APSRTC bus stop',
+					coordinateQuality: 'mapped-stop',
+					lat: 17.68605,
+					lng: 83.20421,
 					offset: 0,
 					journeyMinutes: 115,
 					fare: 400
@@ -75,9 +127,10 @@ export const DEFAULT_DATA = {
 				{
 					id: 'nad-stop',
 					name: 'NAD Junction',
-					landmark: 'Near NAD flyover city bus stop',
-					lat: 17.7431,
-					lng: 83.2316,
+					landmark: 'NAD Junction (E) — in front of RR Complex, end of flyover',
+					lat: 17.744512,
+					lng: 83.236829,
+					coordinateQuality: 'directional-mapped-stop',
 					offset: 20,
 					journeyMinutes: 95,
 					fare: 350
@@ -85,9 +138,10 @@ export const DEFAULT_DATA = {
 				{
 					id: 'gurudwara-stop',
 					name: 'Gurudwara Junction',
-					landmark: 'NH-16 city bus bay',
-					lat: 17.7355,
-					lng: 83.3092,
+					landmark: 'In front of Royal Enfield showroom, opposite Gurudwara',
+					lat: 17.737138,
+					lng: 83.307269,
+					coordinateQuality: 'directional-best-match',
 					offset: 38,
 					journeyMinutes: 77,
 					fare: 350
@@ -95,9 +149,10 @@ export const DEFAULT_DATA = {
 				{
 					id: 'madhurawada-stop',
 					name: 'Madhurawada',
-					landmark: 'Madhurawada highway bus stop',
-					lat: 17.8077,
-					lng: 83.3511,
+					landmark: 'Madhurawada highway bus platform',
+					coordinateQuality: 'mapped-stop-route-unconfirmed',
+					lat: 17.81864,
+					lng: 83.35701,
 					offset: 55,
 					journeyMinutes: 60,
 					fare: 300
@@ -105,9 +160,10 @@ export const DEFAULT_DATA = {
 				{
 					id: 'kommadi-stop',
 					name: 'Kommadi',
-					landmark: 'Kommadi Junction',
-					lat: 17.8298,
-					lng: 83.3447,
+					landmark: 'Kommadi Junction (N) — in front of Urban Treats',
+					coordinateQuality: 'directional-mapped-stop-route-unconfirmed',
+					lat: 17.825246,
+					lng: 83.356575,
 					offset: 65,
 					journeyMinutes: 50,
 					fare: 250
@@ -115,9 +171,10 @@ export const DEFAULT_DATA = {
 				{
 					id: 'anandapuram-stop',
 					name: 'Anandapuram',
-					landmark: 'Anandapuram highway junction',
-					lat: 17.891,
-					lng: 83.3941,
+					landmark: 'Anandapuram bus platform — Bhogapuram direction',
+					coordinateQuality: 'directional-best-match',
+					lat: 17.89482,
+					lng: 83.37695,
 					offset: 82,
 					journeyMinutes: 33,
 					fare: 200
@@ -138,8 +195,9 @@ export const DEFAULT_DATA = {
 					id: 'scindia-stop',
 					name: 'Scindia',
 					landmark: 'Scindia Junction bus stop',
-					lat: 17.684,
-					lng: 83.2788,
+					coordinateQuality: 'mapped-stop',
+					lat: 17.68862,
+					lng: 83.26833,
 					offset: 0,
 					journeyMinutes: 120,
 					fare: 400
@@ -147,9 +205,10 @@ export const DEFAULT_DATA = {
 				{
 					id: 'railway-stop',
 					name: 'Railway Station',
-					landmark: 'Visakhapatnam railway station main entrance',
-					lat: 17.7215,
-					lng: 83.2897,
+					landmark: 'APSRTC bus platform at Visakhapatnam Railway Station',
+					coordinateQuality: 'mapped-apsrtc-stop',
+					lat: 17.72193,
+					lng: 83.29128,
 					offset: 18,
 					journeyMinutes: 102,
 					fare: 300
@@ -157,9 +216,10 @@ export const DEFAULT_DATA = {
 				{
 					id: 'vmrda-stop',
 					name: 'VMRDA Park',
-					landmark: 'Beach Road, opposite VMRDA Park',
-					lat: 17.7371,
-					lng: 83.3426,
+					landmark: 'VUDA / VMRDA Park APSRTC bus stop',
+					coordinateQuality: 'mapped-apsrtc-stop',
+					lat: 17.72538,
+					lng: 83.33894,
 					offset: 35,
 					journeyMinutes: 85,
 					fare: 300
@@ -167,9 +227,10 @@ export const DEFAULT_DATA = {
 				{
 					id: 'rushikonda-stop',
 					name: 'Rushikonda',
-					landmark: 'Rushikonda beach road junction',
-					lat: 17.7834,
-					lng: 83.3858,
+					landmark: 'Rushikonda Junction city bus platform',
+					coordinateQuality: 'mapped-stop',
+					lat: 17.78462,
+					lng: 83.38351,
 					offset: 53,
 					journeyMinutes: 67,
 					fare: 250
@@ -177,9 +238,10 @@ export const DEFAULT_DATA = {
 				{
 					id: 'it-sez-stop',
 					name: 'IT SEZ',
-					landmark: 'Hill No. 3 approach road',
-					lat: 17.8264,
-					lng: 83.3864,
+					landmark: 'IT SEZ Bus Stop',
+					coordinateQuality: 'mapped-stop',
+					lat: 17.8103,
+					lng: 83.3893,
 					offset: 65,
 					journeyMinutes: 55,
 					fare: 250
@@ -187,9 +249,10 @@ export const DEFAULT_DATA = {
 				{
 					id: 'marikavalasa-stop',
 					name: 'Marikavalasa',
-					landmark: 'Marikavalasa highway junction',
-					lat: 17.8585,
-					lng: 83.3775,
+					landmark: 'Marikavalasa APSRTC platform — Bhogapuram direction',
+					coordinateQuality: 'directional-best-match',
+					lat: 17.83708,
+					lng: 83.35869,
 					offset: 75,
 					journeyMinutes: 45,
 					fare: 200

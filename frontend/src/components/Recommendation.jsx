@@ -7,14 +7,9 @@ import {
 	MapPin,
 	Send
 } from 'lucide-react';
-import {
-	formatDate,
-	formatDuration,
-	formatTime,
-	mapsLink
-} from '../lib/format.js';
+import { formatDuration, formatTime, mapsLink } from '../lib/format.js';
 
-export default function Recommendation({ result, verifiedDate }) {
+export default function Recommendation({ result }) {
 	if (!result.best)
 		return (
 			<article
@@ -35,7 +30,7 @@ export default function Recommendation({ result, verifiedDate }) {
 		);
 
 	const share = () => {
-		const text = `Bhogapuram Airport Bus\n${result.best.routeCode} from ${result.best.stopName}\nLeave home: ${formatTime(result.leaveHomeTime)}\nBus: ${formatTime(result.best.departureTime)}\nAirport ETA: ${formatTime(result.best.airportArrivalTime)}\nFare: ₹${result.best.fare}`;
+		const text = `Bhogapuram Airport Bus\n${result.best.routeCode} from ${result.best.stopName}\nNearest bus stop: ${result.nearestStop.name}\nBoard bus: ${formatTime(result.best.departureTime)}\nAirport ETA: ${formatTime(result.best.airportArrivalTime)}\nFare: ₹${result.best.fare}`;
 		window.open(
 			`https://wa.me/?text=${encodeURIComponent(text)}`,
 			'_blank',
@@ -44,18 +39,14 @@ export default function Recommendation({ result, verifiedDate }) {
 	};
 
 	const milestones = [
-		['Leave home', formatTime(result.leaveHomeTime)],
 		['Board bus', formatTime(result.best.departureTime)],
 		['Airport ETA', formatTime(result.best.airportArrivalTime)]
 	];
 	const details = [
 		[BadgeIndianRupee, 'Estimated fare', `₹${result.best.fare}`],
+		[MapPin, 'Nearest bus stop', result.nearestStop.name],
 		[Clock3, 'Be at airport by', formatTime(result.airportBy)],
-		[
-			Luggage,
-			'Flight buffer',
-			formatDuration(result.terminalBuffer + result.extraBuffer)
-		]
+		[Luggage, 'Flight buffer', formatDuration(result.terminalBuffer)]
 	];
 
 	return (
@@ -63,11 +54,10 @@ export default function Recommendation({ result, verifiedDate }) {
 			id="recommendation"
 			className="col-span-full rounded-3xl bg-[#122c2b] p-7 text-white shadow-[0_20px_50px_rgba(15,46,44,.2)] max-md:p-5"
 		>
-			<div className="flex items-center justify-between text-[.68rem] text-teal-100/65">
+			<div className="flex items-center text-[.68rem] text-teal-100/65">
 				<span className="flex items-center gap-1 font-extrabold uppercase tracking-widest text-teal-200">
 					<Check size={14} /> Best option
 				</span>
-				<span>Reference schedule · {formatDate(verifiedDate)}</span>
 			</div>
 			<div className="mt-5 flex items-start gap-4">
 				<span className="rounded-lg bg-brand px-3 py-2 text-xs font-extrabold tracking-wide">
@@ -82,18 +72,15 @@ export default function Recommendation({ result, verifiedDate }) {
 					</p>
 				</div>
 			</div>
-			<div className="my-6 grid grid-cols-3 items-center gap-3">
+			<div className="my-6 grid grid-cols-2 items-center gap-3">
 				{milestones.map(([label, value], index) => (
-					<div
-						key={label}
-						className={index === 1 ? 'text-center' : index === 2 ? 'text-right' : ''}
-					>
+					<div key={label} className={index === 1 ? 'text-right' : ''}>
 						<span className="block text-[.64rem] text-teal-100/55">{label}</span>
 						<strong className="mt-1 block text-base">{value}</strong>
 					</div>
 				))}
 			</div>
-			<div className="grid grid-cols-3 gap-3 max-md:grid-cols-1">
+			<div className="grid grid-cols-4 gap-3 max-lg:grid-cols-2 max-md:grid-cols-1">
 				{details.map(([Icon, label, value]) => (
 					<div
 						key={label}

@@ -12,8 +12,10 @@ test('finds the closest boarding point', () => {
 test('recommends a bus that arrives before the airport safety deadline', () => {
   const tomorrow = new Date(Date.now() + 36 * 60 * 60 * 1000);
   tomorrow.setHours(20, 30, 0, 0);
-  const result = recommendTrip(DEFAULT_DATA, { locationId: 'mvp-colony', flightTime: tomorrow.toISOString(), flightType: 'domestic', extraBuffer: 30 });
-  assert.ok(result.best);
+  const result = recommendTrip(DEFAULT_DATA, { locationId: 'mvp-colony', flightTime: tomorrow.toISOString(), flightType: 'domestic' });
+	assert.ok(result.best);
+	assert.equal(result.terminalBuffer, 120);
+	assert.equal(result.extraBuffer, 0);
   assert.ok(new Date(result.best.airportArrivalTime) <= new Date(result.airportBy));
   assert.ok(new Date(result.leaveHomeTime) < new Date(result.best.departureTime));
 });

@@ -10,7 +10,7 @@ import {
 	ShieldCheck,
 	Sparkles
 } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api.js';
 import Recommendation from './Recommendation.jsx';
 
@@ -42,7 +42,8 @@ const currentMinute = () => {
 	return now;
 };
 
-export default function Planner({ service }) {
+export default function Planner() {
+	const autoLocateAttempted = useRef(false);
 	const [coordinates, setCoordinates] = useState(null);
 	const [flightType, setFlightType] = useState('domestic');
 	const [locating, setLocating] = useState(false);
@@ -76,7 +77,7 @@ export default function Planner({ service }) {
 		setError('');
 	};
 
-	const locate = () => {
+	const locate = useCallback(() => {
 		if (!navigator.geolocation)
 			return setError('Location detection is not supported in this browser.');
 		setLocating(true);
@@ -89,8 +90,12 @@ export default function Planner({ service }) {
 						`/api/nearest?lat=${point.lat}&lng=${point.lng}`
 					);
 					setCoordinates(point);
+					const accuracyNote =
+						coords.accuracy > 1000
+							? ' Your phone shared an approximate location; enable Precise Location for a better match.'
+							: '';
 					setNearestMessage(
-						`${nearest.stop.name} is ${nearest.distanceKm} km away on ${nearest.routeCode}.`
+						`${nearest.stop.name} is ${nearest.distanceKm} km away on ${nearest.routeCode}.${accuracyNote}`
 					);
 				} catch (err) {
 					setError(err.message);
@@ -98,15 +103,45 @@ export default function Planner({ service }) {
 					setLocating(false);
 				}
 			},
-			() => {
-				setError(
-					'We could not access your location. Check your browser permission and try again.'
-				);
+			(locationError) => {
+				const messages = {
+					1:
+						'Location access is blocked. Allow it in your browser site settings and try again.',
+					2:
+						'Turn on Location Services on your phone, then try again.',
+					3:
+						'Location took too long. Turn on Location Services and try again.'
+				};
+				setError(messages[locationError.code] || 'We could not access your location. Try again.');
 				setLocating(false);
 			},
-			{ enableHighAccuracy: true, timeout: 10_000 }
+			{ enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 }
 		);
-	};
+	}, []);
+
+	useEffect(() => {
+		if (
+			autoLocateAttempted.current ||
+			!navigator.geolocation ||
+			!navigator.permissions?.query
+		)
+			return;
+
+		let cancelled = false;
+		navigator.permissions
+			.query({ name: 'geolocation' })
+			.then((permission) => {
+				if (!cancelled && permission.state === 'granted') {
+					autoLocateAttempted.current = true;
+					locate();
+				}
+			})
+			.catch(() => {});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [locate]);
 
 	const submit = async (event) => {
 		event.preventDefault();
@@ -128,8 +163,7 @@ export default function Planner({ service }) {
 				body: JSON.stringify({
 					coordinates,
 					flightTime: selectedDeparture.toISOString(),
-					flightType,
-					extraBuffer: 30
+					flightType
 				})
 			});
 			setResult(recommendation);
@@ -191,7 +225,7 @@ export default function Planner({ service }) {
 						No login needed
 					</span>
 				</div>
-				<label className={fieldLabel}>Where are you coming from?</label>
+				<label className={fieldLabel}>Where are you starting from?</label>
 				<button
 					type="button"
 					className={`flex min-h-18 w-full items-center gap-4 rounded-2xl border px-4 text-left transition-[transform,background-color,border-color] active:scale-[.99] disabled:cursor-wait ${coordinates ? 'border-brand/30 bg-brand-soft' : 'border-slate-200 bg-slate-50 hover:border-brand/30 hover:bg-brand-soft dark:border-white/10 dark:bg-white/5'}`}
@@ -225,7 +259,7 @@ export default function Planner({ service }) {
 								? 'Waiting for browser permission'
 								: coordinates
 									? nearestMessage
-									: 'Allow location access to find your nearest Aero Express stop'}
+									: 'Turn on phone location and allow access to find your nearest Aero Express stop'}
 						</small>
 					</span>
 					{coordinates && !locating && (
@@ -349,12 +383,7 @@ export default function Planner({ service }) {
 					<LockKeyhole size={12} /> Your location stays in this planning session.
 				</p>
 			</form>
-			{result && (
-				<Recommendation
-					result={result}
-					verifiedDate={service.status.verifiedDate}
-				/>
-			)}
+			{result && <Recommendation result={result} />}
 		</section>
 	);
 }
