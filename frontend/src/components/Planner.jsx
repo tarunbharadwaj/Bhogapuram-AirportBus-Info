@@ -105,14 +105,14 @@ export default function Planner() {
 			},
 			(locationError) => {
 				const messages = {
-					1:
-						'Location access is blocked. Allow it in your browser site settings and try again.',
-					2:
-						'Turn on Location Services on your phone, then try again.',
-					3:
-						'Location took too long. Turn on Location Services and try again.'
+					1: 'Location access is Off. Turn on Location Services and try again.',
+					2: 'Turn on Location Services on your phone, then try again.',
+					3: 'Location took too long. Turn on Location Services and try again.'
 				};
-				setError(messages[locationError.code] || 'We could not access your location. Try again.');
+				setError(
+					messages[locationError.code] ||
+						'We could not access your location. Try again.'
+				);
 				setLocating(false);
 			},
 			{ enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 }
