@@ -30,7 +30,11 @@ export default function Recommendation({ result }) {
 		);
 
 	const share = () => {
-		const text = `Bhogapuram Airport Bus\n${result.best.routeCode} from ${result.best.stopName}\nNearest bus stop: ${result.nearestStop.name}\nBoard bus: ${formatTime(result.best.departureTime)}\nAirport ETA: ${formatTime(result.best.airportArrivalTime)}\nFare: ₹${result.best.fare}`;
+		const boardingPointMap = mapsLink(
+			result.nearestStop.lat,
+			result.nearestStop.lng
+		);
+		const text = `Bhogapuram Airport Bus Details\n\n🚌 Bus Number: ${result.best.routeCode}\n📍 Boarding Point: ${result.best.stopName}\n🕐 Board Bus At: ${formatTime(result.best.departureTime).toUpperCase()}\n💰 Estimated Fare: ₹${result.best.fare}\n🗺️ Boarding Point Map: ${boardingPointMap}`;
 		window.open(
 			`https://wa.me/?text=${encodeURIComponent(text)}`,
 			'_blank',
