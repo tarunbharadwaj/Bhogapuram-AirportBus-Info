@@ -3,6 +3,8 @@ import {
 	BusFront,
 	Clock3,
 	ExternalLink,
+	Heart,
+	Linkedin,
 	Map,
 	Route,
 	Send,
@@ -108,6 +110,25 @@ export function Footer() {
 			<p className="col-span-full text-[.62rem] leading-relaxed text-slate-400">
 				This is an independent information tool, not an official APSRTC booking
 				service. Confirm newly launched service timings before leaving.
+			</p>
+			<p className="col-span-full flex items-center justify-center gap-1.5 text-[.65rem] font-semibold text-slate-400">
+				Made with{' '}
+				<Heart
+					size={12}
+					className="fill-rose-400 text-rose-400"
+					aria-label="love"
+				/>{' '}
+				by a
+				<a
+					className="ml-1 inline-flex items-center gap-1 text-brand transition hover:opacity-75"
+					href="https://www.linkedin.com/in/tarun-bharadwaj/"
+					target="_blank"
+					rel="noreferrer"
+					aria-label="Vizagite on LinkedIn"
+				>
+					{/* <Linkedin size={13} /> LinkedIn */}
+					Vizagite
+				</a>
 			</p>
 		</footer>
 	);
