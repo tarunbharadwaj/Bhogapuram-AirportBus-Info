@@ -105,7 +105,7 @@ export default function Planner() {
 			},
 			(locationError) => {
 				const messages = {
-					1: 'Location access is Off. Turn on Location Services and try again.',
+					1: 'Location access is Off. Either allow it in your browser site settings then turn on location services and try again OR open this site in a new tab and allow location access when prompted.',
 					2: 'Turn on Location Services on your phone, then try again.',
 					3: 'Location took too long. Turn on Location Services and try again.'
 				};
