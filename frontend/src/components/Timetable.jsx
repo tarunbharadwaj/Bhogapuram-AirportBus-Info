@@ -1,5 +1,6 @@
 import { BusFront, ChevronDown, CircleAlert, MapPin } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { trackEvent } from '../lib/analytics.js';
 import { formatTime } from '../lib/format.js';
 
 const buildTimetable = (service, routeId, stopId, direction) => {
@@ -18,6 +19,8 @@ const buildTimetable = (service, routeId, stopId, direction) => {
 };
 
 export default function Timetable({ service }) {
+	const sectionRef = useRef(null);
+	const [sectionVisible, setSectionVisible] = useState(false);
 	const [routeId, setRouteId] = useState('asr-1');
 	const [direction, setDirection] = useState('to-airport');
 	const route =
@@ -32,6 +35,24 @@ export default function Timetable({ service }) {
 		if (!route.stops.some((stop) => stop.id === stopId))
 			setStopId(route.stops[0].id);
 	}, [route, stopId]);
+	useEffect(() => {
+		const section = sectionRef.current;
+		if (!section || !('IntersectionObserver' in window)) return;
+		const observer = new IntersectionObserver(
+			([entry]) => setSectionVisible(entry.isIntersecting),
+			{ threshold: 0.25 }
+		);
+		observer.observe(section);
+		return () => observer.disconnect();
+	}, []);
+	useEffect(() => {
+		if (!sectionVisible) return;
+		trackEvent('timetable_viewed', {
+			route_code: data.route.code,
+			stop_id: data.stop.id,
+			direction: data.direction
+		});
+	}, [data.direction, data.route.code, data.stop.id, sectionVisible]);
 	const upcoming =
 		data.services
 			.filter((item) => new Date(item.departure).getTime() >= Date.now())
@@ -42,6 +63,7 @@ export default function Timetable({ service }) {
 
 	return (
 		<section
+			ref={sectionRef}
 			className="mx-auto max-w-7xl scroll-mt-20 px-6 pt-28 max-md:px-4 max-md:pt-20"
 			id="timetables"
 		>

@@ -3,5 +3,7 @@ dist/
 frontend/dist/
 backend/data/service-data.json
 .env
+.env.local
+.env.*.local
 npm-debug.log*
 _redirects

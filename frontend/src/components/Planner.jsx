@@ -12,6 +12,7 @@ import {
 	Sparkles
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { trackEvent } from '../lib/analytics.js';
 import { api } from '../lib/api.js';
 import { findNearestBoardingPoint } from '../lib/nearestStop.js';
 import { recommendTrip } from '../lib/recommendTrip.js';
@@ -81,9 +82,15 @@ export default function Planner({ service, backendReady }) {
 		setError('');
 	};
 
-	const locate = useCallback(async () => {
-		if (!navigator.geolocation)
+	const locate = useCallback(async (requestSource = 'user') => {
+		trackEvent('location_requested', { request_source: requestSource });
+		if (!navigator.geolocation) {
+			trackEvent('location_permission_result', {
+				permission_result: 'unsupported',
+				request_source: requestSource
+			});
 			return setError('Location detection is not supported in this browser.');
+		}
 		setLocating(true);
 		setError('');
 
@@ -91,6 +98,10 @@ export default function Planner({ service, backendReady }) {
 			try {
 				const permission = await navigator.permissions.query({ name: 'geolocation' });
 				if (permission.state === 'denied') {
+					trackEvent('location_permission_result', {
+						permission_result: 'denied',
+						request_source: requestSource
+					});
 					setLocationPermissionDenied(true);
 					setLocating(false);
 					return;
@@ -105,8 +116,23 @@ export default function Planner({ service, backendReady }) {
 				try {
 					const point = { lat: coords.latitude, lng: coords.longitude };
 					const nearest = findNearestBoardingPoint(service, point);
+					const accuracyBand =
+						coords.accuracy <= 100
+							? 'precise'
+							: coords.accuracy <= 1000
+								? 'moderate'
+								: 'approximate';
 					setCoordinates(point);
 					setLocationPermissionDenied(false);
+					trackEvent('location_permission_result', {
+						permission_result: 'granted',
+						request_source: requestSource
+					});
+					trackEvent('location_captured', {
+						accuracy_band: accuracyBand,
+						route_code: nearest.routeCode,
+						stop_id: nearest.stop.id
+					});
 					const accuracyNote =
 						coords.accuracy > 1000
 							? ' Your phone shared an approximate location; enable Precise Location for a better match.'
@@ -122,6 +148,10 @@ export default function Planner({ service, backendReady }) {
 			},
 			(locationError) => {
 				if (locationError.code === 1) {
+					trackEvent('location_permission_result', {
+						permission_result: 'denied',
+						request_source: requestSource
+					});
 					setLocationPermissionDenied(true);
 					setError('');
 					setLocating(false);
@@ -131,6 +161,10 @@ export default function Planner({ service, backendReady }) {
 					2: 'Turn on Location Services on your phone, then try again.',
 					3: 'Location took too long. Turn on Location Services and try again.'
 				};
+				trackEvent('location_permission_result', {
+					permission_result: locationError.code === 2 ? 'unavailable' : 'timeout',
+					request_source: requestSource
+				});
 				setError(
 					messages[locationError.code] ||
 						'We could not access your location. Try again.'
@@ -164,7 +198,7 @@ export default function Planner({ service, backendReady }) {
 				!autoLocateAttempted.current
 			) {
 				autoLocateAttempted.current = true;
-				locate();
+				locate('automatic');
 			}
 		};
 		navigator.permissions
@@ -204,6 +238,19 @@ export default function Planner({ service, backendReady }) {
 			};
 			const recommendation = recommendTrip(service, request);
 			setResult(recommendation);
+			if (recommendation.best) {
+				trackEvent('plan_generated', {
+					route_code: recommendation.best.routeCode,
+					stop_id: recommendation.best.stopId,
+					flight_type: recommendation.flightType
+				});
+			} else {
+				trackEvent('no_safe_bus_found', {
+					route_code: recommendation.nearestStop.routeCode,
+					stop_id: recommendation.nearestStop.id,
+					flight_type: recommendation.flightType
+				});
+			}
 			if (backendReady) {
 				api('/api/recommendations', {
 					method: 'POST',
@@ -274,7 +321,7 @@ export default function Planner({ service, backendReady }) {
 				<button
 					type="button"
 					className={`flex min-h-18 w-full items-center gap-4 rounded-2xl border px-4 text-left transition-[transform,background-color,border-color] active:scale-[.99] disabled:cursor-wait ${coordinates ? 'border-brand/30 bg-brand-soft' : 'border-slate-200 bg-slate-50 hover:border-brand/30 hover:bg-brand-soft dark:border-white/10 dark:bg-white/5'}`}
-					onClick={locate}
+					onClick={() => locate('user')}
 					disabled={locating}
 				>
 					<span
@@ -338,7 +385,7 @@ export default function Planner({ service, backendReady }) {
 						<button
 							type="button"
 							className="mt-3 flex min-h-10 w-full items-center justify-center rounded-xl bg-amber-900 px-4 text-xs font-bold text-white transition active:scale-[.98] dark:bg-amber-200 dark:text-amber-950"
-							onClick={locate}
+							onClick={() => locate('retry')}
 							disabled={locating}
 						>
 							{locating ? 'Checking permission…' : 'I allowed it — try again'}

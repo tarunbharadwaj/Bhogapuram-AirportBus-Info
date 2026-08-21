@@ -63,6 +63,18 @@ npm start
 
 The frontend output is written to `frontend/dist`. Configure the frontend host to fall back to `index.html` for `/service-admin`, and set `VITE_API_URL` when the API is hosted on a different origin. Set `CLIENT_ORIGIN` on the backend to that frontend origin when cross-origin requests are required.
 
+## Google Analytics 4
+
+Create a GA4 web data stream and copy its Measurement ID (`G-...`). In Netlify, add this frontend build variable under **Project configuration → Environment variables** and redeploy:
+
+```text
+VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+```
+
+For local development, copy `frontend/.env.example` to `frontend/.env.local` and add the real ID. The local file is ignored by Git. If the variable is empty or missing, analytics remains disabled. Analytics is also disabled on `/service-admin`.
+
+Tracked events use route codes, stop IDs, flight type, permission outcomes, and broad accuracy bands only. Precise coordinates and flight departure values are never sent.
+
 ## Verification
 
 ```bash

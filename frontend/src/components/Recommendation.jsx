@@ -7,6 +7,7 @@ import {
 	MapPin,
 	Send
 } from 'lucide-react';
+import { trackEvent } from '../lib/analytics.js';
 import { formatDuration, formatTime, mapsLink } from '../lib/format.js';
 
 export default function Recommendation({ result }) {
@@ -30,6 +31,10 @@ export default function Recommendation({ result }) {
 		);
 
 	const share = () => {
+		trackEvent('whatsapp_shared', {
+			route_code: result.best.routeCode,
+			stop_id: result.best.stopId
+		});
 		const boardingPointMap = mapsLink(
 			result.nearestStop.lat,
 			result.nearestStop.lng
@@ -65,14 +70,15 @@ export default function Recommendation({ result }) {
 			</div>
 			<div className="mt-5 flex items-start gap-4">
 				<span className="rounded-lg bg-brand px-3 py-2 text-xs font-extrabold tracking-wide">
-					{result.best.routeCode}
+					Bus Route: {result.best.routeCode}
 				</span>
 				<div>
 					<h2 className="text-xl font-bold tracking-tight">
-						AeroExpress from {result.best.stopName}
+						Nearest Bus Stop is {result.best.stopName}
 					</h2>
 					<p className="mt-1 text-xs text-teal-100/60">
-						{result.nearestStop.distanceKm} km away · {result.best.landmark}
+						You are currently {result.nearestStop.distanceKm} km away from{' '}
+						{result.best.landmark}
 					</p>
 				</div>
 			</div>
@@ -110,6 +116,13 @@ export default function Recommendation({ result }) {
 					href={mapsLink(result.nearestStop.lat, result.nearestStop.lng)}
 					target="_blank"
 					rel="noreferrer"
+					onClick={() =>
+						trackEvent('boarding_map_opened', {
+							map_type: 'recommendation',
+							route_code: result.best.routeCode,
+							stop_id: result.best.stopId
+						})
+					}
 				>
 					<MapPin size={17} /> Boarding point
 				</a>
