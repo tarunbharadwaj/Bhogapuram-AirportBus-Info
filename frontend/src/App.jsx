@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { api } from './lib/api.js';
 import AdminPage from './pages/AdminPage.jsx';
+import FeedbackPage from './pages/FeedbackPage.jsx';
 import HomePage from './pages/HomePage.jsx';
 import { LoadingScreen } from './components/SiteSections.jsx';
 import { FALLBACK_SERVICE } from './data/fallbackService.js';
 
 const SERVICE_CACHE_KEY = 'bhogapuram-service-cache-v1';
-const isAdminPage = window.location.pathname === '/service-admin';
+const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+const isAdminPage = currentPath === '/service-admin';
+const isFeedbackPage = currentPath === '/feedback';
 
 const isServiceData = (value) =>
 	Boolean(
@@ -29,11 +32,13 @@ const initialPublicService = () => {
 
 export default function App() {
 	const [service, setService] = useState(() =>
-		isAdminPage ? null : initialPublicService()
+		isAdminPage || isFeedbackPage ? null : initialPublicService()
 	);
 	const [backendReady, setBackendReady] = useState(false);
 	const [error, setError] = useState('');
 	useEffect(() => {
+		if (isFeedbackPage) return undefined;
+
 		let cancelled = false;
 		const retryDelays = [0, 3000, 7000, 15000, 30000];
 		const wait = (milliseconds) =>
@@ -72,6 +77,7 @@ export default function App() {
 			cancelled = true;
 		};
 	}, []);
+	if (isFeedbackPage) return <FeedbackPage />;
 	if (error) return <LoadingScreen error={error} />;
 	if (!service) return <LoadingScreen />;
 	return isAdminPage ? (

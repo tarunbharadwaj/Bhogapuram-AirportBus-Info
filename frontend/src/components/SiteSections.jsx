@@ -4,8 +4,8 @@ import {
 	Clock3,
 	ExternalLink,
 	Heart,
-	Linkedin,
 	Map,
+	MessageSquareText,
 	Route,
 	Send,
 	ShieldCheck
@@ -89,7 +89,10 @@ export function Footer() {
 					</p>
 				</div>
 			</div>
-			<div className="flex gap-4 text-xs font-semibold text-muted">
+			<div className="flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold text-muted">
+				<a className="flex items-center gap-1" href="/feedback">
+					Feedback <MessageSquareText size={12} />
+				</a>
 				<a
 					className="flex items-center gap-1"
 					href="https://www.apsrtc.ap.gov.in/"

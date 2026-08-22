@@ -33,6 +33,13 @@ export default function Header() {
 						{label}
 					</button>
 				))}
+				<a
+					className="rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white dark:hover:bg-white/8 max-md:text-left"
+					href="/feedback"
+					onClick={() => setOpen(false)}
+				>
+					Feedback
+				</a>
 			</nav>
 		</header>
 	);

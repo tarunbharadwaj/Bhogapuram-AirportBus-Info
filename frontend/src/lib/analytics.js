@@ -10,7 +10,8 @@ const allowedEvents = new Set([
 	'route_viewed',
 	'timetable_viewed',
 	'boarding_map_opened',
-	'whatsapp_shared'
+	'whatsapp_shared',
+	'feedback_submitted'
 ]);
 
 const allowedParameters = new Set([
@@ -21,7 +22,8 @@ const allowedParameters = new Set([
 	'stop_id',
 	'flight_type',
 	'direction',
-	'map_type'
+	'map_type',
+	'feedback_type'
 ]);
 
 let initialized = false;
