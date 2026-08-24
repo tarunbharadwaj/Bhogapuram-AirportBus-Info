@@ -1,6 +1,7 @@
 import {
 	ArrowRight,
 	BadgeIndianRupee,
+	CalendarDays,
 	Check,
 	CircleAlert,
 	Clock3,
@@ -27,6 +28,11 @@ const fieldLabel =
 
 const localDateValue = (date) =>
 	`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+const displayDateValue = (value) => {
+	const [year, month, day] = value.split('-');
+	return year && month && day ? `${day}-${month}-${year}` : 'DD-MM-YYYY';
+};
 
 const departurePartsFrom = (date) => ({
 	date: localDateValue(date),
@@ -416,6 +422,7 @@ export default function Planner({ service, backendReady }) {
 									<li>Tap the site-controls icon beside your browser address bar.</li>
 									<li>Open Permissions or Website Settings, then set Location to Allow.</li>
 									<li>Make sure Location Services are turned on for your phone.</li>
+									<li>Make sure you refresh the page after these changes.</li>
 								</ol>
 							</div>
 						</div>
@@ -496,15 +503,24 @@ export default function Planner({ service, backendReady }) {
 						<span className="text-[.62rem] font-bold tracking-wide text-muted">
 							Travel date
 						</span>
-						<input
-							id="flight-date"
-							className="mt-1 w-full bg-transparent text-[.95rem] font-bold tracking-[-.01em] text-ink outline-none"
-							type="date"
-							min={localDateValue(new Date())}
-							value={flightDeparture.date}
-							onChange={(event) => changeDeparture('date', event.target.value)}
-							required
-						/>
+						<div className="relative mt-1 flex min-h-7 items-center gap-2 text-[.95rem] font-bold tracking-[-.01em] text-ink">
+							<CalendarDays
+								size={17}
+								className="shrink-0 text-slate-400"
+								aria-hidden="true"
+							/>
+							<span aria-hidden="true">{displayDateValue(flightDeparture.date)}</span>
+							<input
+								id="flight-date"
+								className="absolute inset-0 size-full cursor-pointer opacity-0"
+								type="date"
+								aria-label="Flight travel date"
+								min={localDateValue(new Date())}
+								value={flightDeparture.date}
+								onChange={(event) => changeDeparture('date', event.target.value)}
+								required
+							/>
+						</div>
 					</label>
 					<fieldset className="grid min-h-18 content-center border-l border-slate-200 px-4 py-3 transition-colors focus-within:bg-white/70 dark:border-white/10 dark:focus-within:bg-white/5 max-md:border-l-0 max-md:border-t">
 						<legend className="sr-only">Departure time</legend>
