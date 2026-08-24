@@ -15,7 +15,14 @@ export class ServiceController {
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return res.status(400).json({ error: 'Valid coordinates are required.' });
     const nearest = nearestStop(this.serviceModel.getAll(), { lat, lng });
     if (!nearest) return res.status(404).json({ error: 'No active route is available.' });
-    res.json({ routeId: nearest.route.id, routeCode: nearest.route.code, stop: nearest.stop, distanceKm: Number(nearest.distanceKm.toFixed(1)) });
+    res.json({
+      routeId: nearest.route.id,
+      routeCode: nearest.route.code,
+      stop: nearest.stop,
+      distanceKm: Number(nearest.distanceKm.toFixed(1)),
+      outsideServiceArea: nearest.outsideServiceArea,
+      serviceAreaRadiusKm: nearest.serviceAreaRadiusKm,
+    });
   };
 
   createRecommendation = (req, res) => {

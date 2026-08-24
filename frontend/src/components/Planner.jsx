@@ -4,6 +4,7 @@ import {
 	Check,
 	CircleAlert,
 	Clock3,
+	ExternalLink,
 	LocateFixed,
 	LockKeyhole,
 	MapPin,
@@ -14,6 +15,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { trackEvent } from '../lib/analytics.js';
 import { api } from '../lib/api.js';
+import { mapsLink } from '../lib/format.js';
 import { findNearestBoardingPoint } from '../lib/nearestStop.js';
 import { recommendTrip } from '../lib/recommendTrip.js';
 import Recommendation from './Recommendation.jsx';
@@ -49,6 +51,9 @@ const currentMinute = () => {
 export default function Planner({ service, backendReady }) {
 	const autoLocateAttempted = useRef(false);
 	const [coordinates, setCoordinates] = useState(null);
+	const [nearestMatch, setNearestMatch] = useState(null);
+	const [outsideServiceAreaOverride, setOutsideServiceAreaOverride] =
+		useState(false);
 	const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
 	const [flightType, setFlightType] = useState('domestic');
 	const [locating, setLocating] = useState(false);
@@ -61,6 +66,7 @@ export default function Planner({ service, backendReady }) {
 		date.setMinutes(Math.ceil(date.getMinutes() / 15) * 15, 0, 0);
 		return departurePartsFrom(date);
 	});
+	const outsideServiceArea = Boolean(nearestMatch?.outsideServiceArea);
 
 	const changeDeparture = (part, value) => {
 		let next = { ...flightDeparture, [part]: value };
@@ -123,6 +129,9 @@ export default function Planner({ service, backendReady }) {
 								? 'moderate'
 								: 'approximate';
 					setCoordinates(point);
+					setNearestMatch(nearest);
+					setOutsideServiceAreaOverride(false);
+					setResult(null);
 					setLocationPermissionDenied(false);
 					trackEvent('location_permission_result', {
 						permission_result: 'granted',
@@ -131,14 +140,24 @@ export default function Planner({ service, backendReady }) {
 					trackEvent('location_captured', {
 						accuracy_band: accuracyBand,
 						route_code: nearest.routeCode,
-						stop_id: nearest.stop.id
+						stop_id: nearest.stop.id,
+						coverage_status: nearest.outsideServiceArea ? 'outside' : 'inside'
 					});
+					if (nearest.outsideServiceArea) {
+						trackEvent('location_outside_service_area', {
+							route_code: nearest.routeCode,
+							stop_id: nearest.stop.id,
+							coverage_status: 'outside'
+						});
+					}
 					const accuracyNote =
 						coords.accuracy > 1000
 							? ' Your phone shared an approximate location; enable Precise Location for a better match.'
 							: '';
 					setNearestMessage(
-						`${nearest.stop.name} is ${nearest.distanceKm} km away on ${nearest.routeCode}.${accuracyNote}`
+						nearest.outsideServiceArea
+							? `Nearest supported stop: ${nearest.stop.name}, ${nearest.distanceKm} km away on ${nearest.routeCode}.${accuracyNote}`
+							: `${nearest.stop.name} is ${nearest.distanceKm} km away on ${nearest.routeCode}.${accuracyNote}`
 					);
 				} catch (err) {
 					setError(err.message);
@@ -216,10 +235,25 @@ export default function Planner({ service, backendReady }) {
 		};
 	}, [locate]);
 
+	const confirmOutsideServiceArea = () => {
+		if (!nearestMatch?.outsideServiceArea) return;
+		setOutsideServiceAreaOverride(true);
+		setError('');
+		trackEvent('outside_service_area_override', {
+			route_code: nearestMatch.routeCode,
+			stop_id: nearestMatch.stop.id,
+			coverage_status: 'outside'
+		});
+	};
+
 	const submit = async (event) => {
 		event.preventDefault();
 		if (!coordinates) {
 			setError('Use your location before finding an airport bus.');
+			return;
+		}
+		if (outsideServiceArea && !outsideServiceAreaOverride) {
+			setError('Confirm that you can reach the nearest supported stop first.');
 			return;
 		}
 		const selectedDeparture = departureDateFrom(flightDeparture);
@@ -234,7 +268,8 @@ export default function Planner({ service, backendReady }) {
 			const request = {
 				coordinates,
 				flightTime: selectedDeparture.toISOString(),
-				flightType
+				flightType,
+				allowOutsideServiceArea: outsideServiceAreaOverride
 			};
 			const recommendation = recommendTrip(service, request);
 			setResult(recommendation);
@@ -320,12 +355,12 @@ export default function Planner({ service, backendReady }) {
 				<label className={fieldLabel}>Where are you starting from?</label>
 				<button
 					type="button"
-					className={`flex min-h-18 w-full items-center gap-4 rounded-2xl border px-4 text-left transition-[transform,background-color,border-color] active:scale-[.99] disabled:cursor-wait ${coordinates ? 'border-brand/30 bg-brand-soft' : 'border-slate-200 bg-slate-50 hover:border-brand/30 hover:bg-brand-soft dark:border-white/10 dark:bg-white/5'}`}
+					className={`flex min-h-18 w-full items-center gap-4 rounded-2xl border px-4 text-left transition-[transform,background-color,border-color] active:scale-[.99] disabled:cursor-wait ${coordinates ? outsideServiceArea ? 'border-amber-300/70 bg-amber-50 dark:border-amber-300/20 dark:bg-amber-300/8' : 'border-brand/30 bg-brand-soft' : 'border-slate-200 bg-slate-50 hover:border-brand/30 hover:bg-brand-soft dark:border-white/10 dark:bg-white/5'}`}
 					onClick={() => locate('user')}
 					disabled={locating}
 				>
 					<span
-						className={`relative flex size-11 shrink-0 items-center justify-center rounded-xl ${coordinates ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'bg-brand-soft text-brand'}`}
+						className={`relative flex size-11 shrink-0 items-center justify-center rounded-xl ${coordinates ? outsideServiceArea ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-brand text-white shadow-lg shadow-brand/20' : 'bg-brand-soft text-brand'}`}
 					>
 						{coordinates ? (
 							<MapPin size={22} fill="currentColor" />
@@ -333,7 +368,7 @@ export default function Planner({ service, backendReady }) {
 							<LocateFixed size={21} />
 						)}
 						{coordinates && (
-							<span className="absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full border-2 border-brand-soft bg-white text-brand dark:bg-slate-900">
+							<span className={`absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full border-2 bg-white dark:bg-slate-900 ${outsideServiceArea ? 'border-amber-100 text-amber-600 dark:border-amber-900' : 'border-brand-soft text-brand'}`}>
 								<Check size={11} strokeWidth={3} />
 							</span>
 						)}
@@ -343,7 +378,9 @@ export default function Planner({ service, backendReady }) {
 							{locating
 								? 'Capturing your location…'
 								: coordinates
-									? 'Location captured'
+									? outsideServiceArea
+										? 'Outside AeroExpress service area'
+										: 'Location captured'
 									: locationPermissionDenied
 										? 'Location access blocked'
 										: 'Use my location'}
@@ -359,7 +396,7 @@ export default function Planner({ service, backendReady }) {
 						</small>
 					</span>
 					{coordinates && !locating && (
-						<span className="rounded-full bg-white/70 px-3 py-1 text-[.62rem] font-bold text-brand dark:bg-white/10">
+						<span className={`rounded-full bg-white/70 px-3 py-1 text-[.62rem] font-bold dark:bg-white/10 ${outsideServiceArea ? 'text-amber-700 dark:text-amber-200' : 'text-brand'}`}>
 							Update
 						</span>
 					)}
@@ -390,6 +427,62 @@ export default function Planner({ service, backendReady }) {
 						>
 							{locating ? 'Checking permission…' : 'I allowed it — try again'}
 						</button>
+					</div>
+				)}
+				{coordinates && outsideServiceArea && (
+					<div
+						className="mt-3 rounded-2xl border border-amber-300/60 bg-amber-50 p-4 text-left text-amber-950 dark:border-amber-300/15 dark:bg-amber-300/8 dark:text-amber-100"
+						role="status"
+					>
+						<div className="flex items-start gap-3">
+							<span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-200/60 text-amber-800 dark:bg-amber-200/10 dark:text-amber-200">
+								<CircleAlert size={18} aria-hidden="true" />
+							</span>
+							<div>
+								<strong className="text-sm">You’re outside the AeroExpress service area</strong>
+								<p className="mt-1 text-[.7rem] leading-relaxed text-amber-900/75 dark:text-amber-100/70">
+									The nearest supported stop is {nearestMatch.stop.name} on{' '}
+									{nearestMatch.routeCode}, {nearestMatch.distanceKm} km away.
+								</p>
+							</div>
+						</div>
+						{outsideServiceAreaOverride && (
+							<p className="mt-3 flex items-start gap-2 rounded-xl bg-white/60 p-3 text-[.7rem] leading-relaxed dark:bg-white/6">
+								<Check className="mt-0.5 shrink-0" size={15} strokeWidth={3} />
+								Planning from {nearestMatch.stop.name}. Travel time to this stop is
+								 not included—arrive before the displayed bus boarding time.
+							</p>
+						)}
+						<div className="mt-3 grid grid-cols-2 gap-2 max-sm:grid-cols-1">
+							<a
+								className="flex min-h-10 items-center justify-center gap-2 rounded-xl border border-amber-300/70 bg-white/70 px-3 text-xs font-bold text-amber-900 transition active:scale-[.98] dark:border-amber-200/20 dark:bg-white/8 dark:text-amber-100"
+								href={mapsLink(nearestMatch.stop.lat, nearestMatch.stop.lng)}
+								target="_blank"
+								rel="noreferrer"
+								onClick={() =>
+									trackEvent('boarding_map_opened', {
+										map_type: 'outside-service-area',
+										route_code: nearestMatch.routeCode,
+										stop_id: nearestMatch.stop.id
+									})
+								}
+							>
+								<MapPin size={15} /> Open stop in Maps <ExternalLink size={13} />
+							</a>
+							{!outsideServiceAreaOverride ? (
+								<button
+									type="button"
+									className="min-h-10 rounded-xl bg-amber-900 px-3 text-xs font-bold text-white transition active:scale-[.98] dark:bg-amber-200 dark:text-amber-950"
+									onClick={confirmOutsideServiceArea}
+								>
+									Plan from this stop anyway
+								</button>
+							) : (
+								<span className="flex min-h-10 items-center justify-center gap-2 rounded-xl bg-amber-200/55 px-3 text-xs font-bold text-amber-900 dark:bg-amber-200/10 dark:text-amber-100">
+									<Check size={15} strokeWidth={3} /> Stop confirmed
+								</span>
+							)}
+						</div>
 					</div>
 				)}
 				<label className={fieldLabel} htmlFor="flight-date">
@@ -498,7 +591,11 @@ export default function Planner({ service, backendReady }) {
 				)}
 				<button
 					className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[#0b8d85] to-[#08756f] text-sm font-bold text-white shadow-lg shadow-brand/15 transition active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-45"
-					disabled={loading || !coordinates}
+					disabled={
+						loading ||
+						!coordinates ||
+						(outsideServiceArea && !outsideServiceAreaOverride)
+					}
 				>
 					{loading ? 'Finding your bus…' : 'Find my airport bus'}{' '}
 					<ArrowRight size={18} />

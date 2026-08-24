@@ -1,3 +1,8 @@
+import {
+	SERVICE_AREA_RADIUS_KM,
+	isOutsideServiceArea
+} from '../../../shared/serviceArea.mjs';
+
 const EARTH_RADIUS_KM = 6371;
 
 const haversineKm = (from, to) => {
@@ -32,5 +37,10 @@ export const findNearestBoardingPoint = (service, point) => {
 		.sort((left, right) => left.distanceKm - right.distanceKm)[0];
 
 	if (!nearest) throw new Error('No active AeroExpress route is available.');
-	return { ...nearest, distanceKm: Number(nearest.distanceKm.toFixed(1)) };
+	return {
+		...nearest,
+		distanceKm: Number(nearest.distanceKm.toFixed(1)),
+		outsideServiceArea: isOutsideServiceArea(nearest.distanceKm),
+		serviceAreaRadiusKm: SERVICE_AREA_RADIUS_KM
+	};
 };

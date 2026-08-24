@@ -110,6 +110,13 @@ export default function Recommendation({ result }) {
 					may miss your safety window.
 				</p>
 			)}
+			{result.outsideServiceArea && (
+				<p className="mt-4 flex items-start gap-2 rounded-xl bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
+					<CircleAlert className="mt-0.5 shrink-0" size={16} /> Travel time to{' '}
+					{result.nearestStop.name} is not included. Reach the stop before the{' '}
+					{formatTime(result.best.departureTime)} boarding time.
+				</p>
+			)}
 			<div className="mt-4 grid grid-cols-2 gap-3 max-md:grid-cols-1">
 				<a
 					className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white font-bold text-slate-700 transition active:scale-[.98]"

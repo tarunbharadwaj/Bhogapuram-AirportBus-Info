@@ -1,3 +1,8 @@
+import {
+  SERVICE_AREA_RADIUS_KM,
+  isOutsideServiceArea,
+} from '../../../shared/serviceArea.mjs';
+
 const EARTH_RADIUS_KM = 6371;
 
 export function haversineKm(a, b) {
@@ -11,10 +16,16 @@ export function haversineKm(a, b) {
 }
 
 export function nearestStop(data, point) {
-  return data.routes
+  const nearest = data.routes
     .filter((route) => route.enabled)
     .flatMap((route) => route.stops.map((stop) => ({ route, stop, distanceKm: haversineKm(point, stop) })))
     .sort((a, b) => a.distanceKm - b.distanceKm)[0];
+  if (!nearest) return undefined;
+  return {
+    ...nearest,
+    outsideServiceArea: isOutsideServiceArea(nearest.distanceKm),
+    serviceAreaRadiusKm: SERVICE_AREA_RADIUS_KM,
+  };
 }
 
 function dateAtMinutes(reference, minutes, dayOffset = 0) {
@@ -56,11 +67,16 @@ export function recommendTrip(data, input) {
 
   const nearest = nearestStop(data, point);
   if (!nearest) throw new Error('No active AeroExpress route is available.');
+  if (nearest.outsideServiceArea && input.allowOutsideServiceArea !== true) {
+    throw new Error('Confirm that you can reach the nearest supported stop before planning this trip.');
+  }
 
   const terminalBuffer = input.flightType === 'international' ? 180 : 120;
   const extraBuffer = Math.max(0, Math.min(120, Number(input.extraBuffer) || 0));
   const airportBy = new Date(flightTime.getTime() - (terminalBuffer + extraBuffer) * 60_000);
-  const walkMinutes = Math.max(8, Math.round((nearest.distanceKm / 22) * 60 + 5));
+  const walkMinutes = nearest.outsideServiceArea
+    ? null
+    : Math.max(8, Math.round((nearest.distanceKm / 22) * 60 + 5));
 
   const services = [-1, 0].flatMap((dayOffset) => nearest.route.times.map((time) => {
     const origin = dateAtMinutes(flightTime, parseTime(time), dayOffset);
@@ -71,7 +87,9 @@ export function recommendTrip(data, input) {
   const best = safeServices.at(-1) || null;
   const earlier = safeServices.at(-2) || null;
   const next = best ? services.find((service) => new Date(service.departureTime) > new Date(best.departureTime)) : services.find((service) => new Date(service.departureTime) > new Date());
-  const leaveHomeTime = best ? new Date(new Date(best.departureTime).getTime() - (walkMinutes + 10) * 60_000) : null;
+  const leaveHomeTime = best && walkMinutes !== null
+    ? new Date(new Date(best.departureTime).getTime() - (walkMinutes + 10) * 60_000)
+    : null;
 
   return {
     best,
@@ -83,6 +101,8 @@ export function recommendTrip(data, input) {
     flightType: input.flightType === 'international' ? 'international' : 'domestic',
     terminalBuffer,
     extraBuffer,
+    outsideServiceArea: nearest.outsideServiceArea,
+    serviceAreaRadiusKm: nearest.serviceAreaRadiusKm,
     nearestStop: {
       id: nearest.stop.id,
       name: nearest.stop.name,

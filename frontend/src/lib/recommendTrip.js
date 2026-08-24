@@ -36,12 +36,15 @@ export const recommendTrip = (service, input) => {
 		throw new Error('Flight time must be in the future.');
 
 	const nearest = findNearestBoardingPoint(service, input.coordinates);
+	if (nearest.outsideServiceArea && input.allowOutsideServiceArea !== true)
+		throw new Error(
+			'Confirm that you can reach the nearest supported stop before planning this trip.'
+		);
 	const terminalBuffer = input.flightType === 'international' ? 180 : 120;
 	const airportBy = new Date(flightTime.getTime() - terminalBuffer * 60_000);
-	const walkMinutes = Math.max(
-		8,
-		Math.round((nearest.distanceKm / 22) * 60 + 5)
-	);
+	const walkMinutes = nearest.outsideServiceArea
+		? null
+		: Math.max(8, Math.round((nearest.distanceKm / 22) * 60 + 5));
 	const services = [-1, 0]
 		.flatMap((dayOffset) =>
 			nearest.route.times.map((time) => {
@@ -77,6 +80,8 @@ export const recommendTrip = (service, input) => {
 		flightType: input.flightType === 'international' ? 'international' : 'domestic',
 		terminalBuffer,
 		extraBuffer: 0,
+		outsideServiceArea: nearest.outsideServiceArea,
+		serviceAreaRadiusKm: nearest.serviceAreaRadiusKm,
 		nearestStop: {
 			id: nearest.stop.id,
 			name: nearest.stop.name,
