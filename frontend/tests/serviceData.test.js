@@ -64,7 +64,39 @@ test('keeps published origin times exact and marks intermediate pins and times',
 	}
 	assert.equal(route('ASR-1').estimatedJourneyMinutes, 120);
 	assert.equal(route('ASR-2').estimatedJourneyMinutes, 150);
-	assert.equal(route('ASR-1').stops.find((stop) => stop.id === 'zoo-park-stop').coordinateQuality, 'approximate-best-match');
+	assert.deepEqual(
+		(({ lat, lng }) => ({ lat, lng }))(
+			route('ASR-1').stops.find((stop) => stop.id === 'zoo-park-stop')
+		),
+		{ lat: 17.7689933, lng: 83.3439567 }
+	);
+	assert.equal(
+		route('ASR-1').stops.find((stop) => stop.id === 'airport-junction-stop').coordinateQuality,
+		'approximate-best-match'
+	);
+	for (const routeCode of ['ASR-1', 'ASR-2']) {
+		const marikavalasa = route(routeCode).stops.find(
+			(stop) => stop.id === 'marikavalasa-stop'
+		);
+		const tagarapuvalasa = route(routeCode).stops.find(
+			(stop) => stop.id === 'tagarapuvalasa-stop'
+		);
+		assert.deepEqual(
+			{ lat: marikavalasa.lat, lng: marikavalasa.lng },
+			{ lat: 17.8371327, lng: 83.358547 }
+		);
+		assert.deepEqual(
+			{ lat: tagarapuvalasa.lat, lng: tagarapuvalasa.lng },
+			{ lat: 17.9287702, lng: 83.4236959 }
+		);
+	}
+	const asr2Coordinates = Object.fromEntries(
+		route('ASR-2').stops.map((stop) => [stop.id, [stop.lat, stop.lng]])
+	);
+	assert.deepEqual(asr2Coordinates['kancharapalem-stop'], [17.7322554, 83.2778582]);
+	assert.deepEqual(asr2Coordinates['siripuram-stop'], [17.7209182, 83.3218202]);
+	assert.deepEqual(asr2Coordinates['iskcon-temple-stop'], [17.7677556, 83.3666993]);
+	assert.deepEqual(asr2Coordinates['it-hills-stop'], [17.8103056, 83.3893056]);
 });
 
 test('groups both routes at a shared physical stop', () => {
