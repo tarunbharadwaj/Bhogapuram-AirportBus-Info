@@ -2,12 +2,13 @@ import { BusFront, ChevronDown, CircleAlert, MapPin } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { trackEvent } from '../lib/analytics.js';
 import { formatTime } from '../lib/format.js';
+import { getDirectionalTimes } from '../../../shared/serviceRouting.mjs';
 
 const buildTimetable = (service, routeId, stopId, direction) => {
 	const route = service.routes.find((item) => item.id === routeId) || service.routes[0];
 	const stop = route.stops.find((item) => item.id === stopId) || route.stops[0];
 	const now = new Date();
-	const services = route.times.map((time) => {
+	const services = getDirectionalTimes(route, direction).map((time) => {
 		const [hours, minutes] = time.split(':').map(Number);
 		const departure = new Date(now);
 		departure.setHours(hours, minutes, 0, 0);
@@ -77,7 +78,7 @@ export default function Timetable({ service }) {
 					</h2>
 				</div>
 				<p className="max-w-md text-sm leading-relaxed text-muted max-md:mt-4">
-					Choose a route and stop to see the next five reference services.
+					Choose a route and stop to see the next five published departures.
 				</p>
 			</div>
 			<div className="adaptive-material grid min-h-96 grid-cols-[18rem_1fr] overflow-hidden rounded-3xl border border-white bg-white/80 shadow-[0_18px_55px_rgba(22,44,58,.08)] backdrop-blur-xl transition-colors duration-300 dark:border-white/10 dark:bg-slate-900/85 dark:shadow-[0_20px_55px_rgba(0,0,0,.28)] max-md:grid-cols-1">
@@ -148,7 +149,7 @@ export default function Timetable({ service }) {
 					</div>
 					{visible.map((item, index) => (
 						<div
-							key={item.departure}
+							key={`${item.departure}-${index}`}
 							className={`grid min-h-14 grid-cols-[2.2rem_auto_auto_1fr_auto] items-center gap-3 border-t border-slate-200 text-sm dark:border-white/10 ${index === 0 && upcoming.length ? 'rounded-xl border border-brand/20 bg-brand-soft px-3' : ''}`}
 						>
 							<span className="flex size-8 items-center justify-center rounded-lg bg-brand-soft text-brand">
@@ -165,8 +166,8 @@ export default function Timetable({ service }) {
 						</div>
 					))}
 					<p className="mt-4 flex items-center gap-2 text-[.68rem] text-slate-400">
-						<CircleAlert size={14} /> Intermediate times are estimates. Please arrive
-						10 minutes early.
+						<CircleAlert size={14} /> Route-origin departures are published;
+						intermediate times are estimates. Please arrive 10 minutes early.
 					</p>
 				</div>
 			</div>

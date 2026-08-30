@@ -1,70 +1,313 @@
-import { ArrowLeft, ArrowRight, Check, ChevronDown, CircleAlert, LockKeyhole, Settings2 } from 'lucide-react';
+import {
+	ArrowLeft,
+	ArrowRight,
+	Check,
+	ChevronDown,
+	CircleAlert,
+	LockKeyhole,
+	Plus,
+	Settings2,
+	Trash2
+} from 'lucide-react';
 import { useState } from 'react';
 import Brand from '../components/Brand.jsx';
 import ThemeToggle from '../components/ThemeToggle.jsx';
 import { api } from '../lib/api.js';
 
-const fieldClass = 'mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-ink outline-none transition focus:border-brand/60 focus:ring-3 focus:ring-brand/10 dark:border-white/10 dark:bg-white/6';
+const fieldClass =
+	'mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-ink outline-none transition focus:border-brand/60 focus:ring-3 focus:ring-brand/10 dark:border-white/10 dark:bg-white/6';
+
+const timetableSections = [
+	['toAirport', 'City → Airport', 'Published departures from Old Gajuwaka'],
+	['fromAirport', 'Airport → City', 'Published departures from Bhogapuram Airport']
+];
+
+const nextTime = (value = '00:00') => {
+	const [hours, minutes] = value.split(':').map(Number);
+	const total = (hours * 60 + minutes + 30) % (24 * 60);
+	return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+};
 
 export default function AdminPage({ service, onSaved }) {
-  const [pin, setPin] = useState('');
-  const [token, setToken] = useState('');
-  const [draft, setDraft] = useState(structuredClone(service));
-  const [error, setError] = useState('');
-  const [saving, setSaving] = useState(false);
+	const [pin, setPin] = useState('');
+	const [token, setToken] = useState('');
+	const [draft, setDraft] = useState(structuredClone(service));
+	const [error, setError] = useState('');
+	const [saving, setSaving] = useState(false);
 
-  const login = async (event) => {
-    event.preventDefault(); setError('');
-    try { const result = await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ pin }) }); setToken(result.token); setDraft(result.service); }
-    catch (err) { setError(err.message); }
-  };
-  const updateRoute = (routeIndex, field, value) => setDraft((current) => {
-    const next = structuredClone(current);
-    if (field === 'enabled') next.routes[routeIndex].enabled = value;
-    else next.routes[routeIndex].schedule[field] = value;
-    return next;
-  });
-  const updateFare = (routeIndex, stopIndex, value) => setDraft((current) => {
-    const next = structuredClone(current); next.routes[routeIndex].stops[stopIndex].fare = Number(value); return next;
-  });
-  const save = async () => {
-    setSaving(true); setError('');
-    try { const result = await api('/api/admin/service', { method: 'PUT', headers: { Authorization: `Bearer ${token}` }, body: JSON.stringify(draft) }); setDraft(result); onSaved(result); }
-    catch (err) { setError(err.message); }
-    finally { setSaving(false); }
-  };
+	const login = async (event) => {
+		event.preventDefault();
+		setError('');
+		try {
+			const result = await api('/api/admin/login', {
+				method: 'POST',
+				body: JSON.stringify({ pin })
+			});
+			setToken(result.token);
+			setDraft(result.service);
+		} catch (requestError) {
+			setError(requestError.message);
+		}
+	};
 
-  return (
-    <div className="min-h-screen bg-[#f3f6f7] transition-colors duration-300 dark:bg-[#0b1116]">
-      <header className="mx-auto flex h-20 max-w-5xl items-center justify-between px-5"><Brand /><div className="flex items-center gap-2"><a href="/" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-muted no-underline hover:bg-white dark:hover:bg-white/8"><ArrowLeft size={17} /> Back to website</a><ThemeToggle /></div></header>
-      {!token ? <main className="adaptive-material mx-auto mt-12 max-w-sm rounded-3xl border border-white bg-white/90 p-8 text-center shadow-[0_22px_60px_rgba(20,43,56,.11)] backdrop-blur-xl transition-colors duration-300 dark:border-white/10 dark:bg-slate-900/90 dark:shadow-[0_24px_70px_rgba(0,0,0,.35)]">
-        <span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-brand-soft text-brand"><LockKeyhole size={27} /></span><h1 className="mt-5 text-2xl font-bold tracking-tight">Service admin</h1><p className="mt-2 text-sm leading-relaxed text-muted">Enter the service PIN to update schedules, fares and alerts.</p>
-        <form className="mt-6 text-left" onSubmit={login}><label className="text-xs font-bold text-slate-600 dark:text-slate-300">Admin PIN<input className={fieldClass} type="password" inputMode="numeric" value={pin} onChange={(event) => setPin(event.target.value)} placeholder="••••" autoFocus /></label>{error && <p className="mt-3 flex items-center gap-2 text-xs text-red-700 dark:text-red-300"><CircleAlert size={15} /> {error}</p>}<button className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand font-bold text-white transition active:scale-[.98]">Continue <ArrowRight size={18} /></button></form>
-        <small className="mt-3 block text-[.62rem] text-slate-400">MVP demo PIN: 2468 · Set ADMIN_PIN in production.</small>
-      </main> : <main className="mx-auto max-w-5xl px-5 pb-16">
-        <div className="mb-8 flex items-end justify-between"><div><span className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[.12em] text-brand"><Settings2 size={15} /> Service management</span><h1 className="mt-3 text-4xl font-bold tracking-tight">Public journey data</h1><p className="mt-2 text-sm text-muted">Saved changes are immediately available through the API.</p></div><span className="flex items-center gap-2 rounded-full bg-brand-soft px-3 py-2 text-xs font-bold text-brand"><i className="size-2 rounded-full bg-brand" /> Public</span></div>
-        <section className="adaptive-material rounded-3xl border border-white bg-white/80 p-6 shadow-xl shadow-slate-900/5 backdrop-blur-xl transition-colors duration-300 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-black/20">
-          <div className="grid grid-cols-[12rem_1fr] gap-4 max-md:grid-cols-1">
-            <label className="text-xs font-bold text-muted">Verified date<input className={fieldClass} type="date" value={draft.status.verifiedDate} onChange={(event) => setDraft({ ...draft, status: { ...draft.status, verifiedDate: event.target.value } })} /></label>
-            <label className="text-xs font-bold text-muted">Public announcement<textarea className={fieldClass} rows="3" value={draft.status.announcement} onChange={(event) => setDraft({ ...draft, status: { ...draft.status, announcement: event.target.value } })} /></label>
-          </div>
-          <label className="mt-5 flex items-center justify-between gap-5 border-t border-slate-200 pt-5 dark:border-white/10">
-            <span className="grid gap-1"><strong className="text-sm">Show announcement banner</strong><small className="text-[.68rem] text-slate-400">Display this announcement above the trip planner.</small></span>
-            <span className="relative shrink-0">
-              <input className="peer sr-only" type="checkbox" checked={draft.status.announcementVisible !== false} onChange={(event) => setDraft({ ...draft, status: { ...draft.status, announcementVisible: event.target.checked } })} />
-              <span className="block h-7 w-12 rounded-full bg-slate-300 transition peer-checked:bg-brand" />
-              <span className="absolute top-1 left-1 size-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
-            </span>
-          </label>
-        </section>
-        {draft.routes.map((route, routeIndex) => <details className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white transition-colors duration-300 dark:border-white/10 dark:bg-slate-900" key={route.id} open={routeIndex === 0}><summary className="grid cursor-pointer list-none grid-cols-[auto_1fr_auto] items-center gap-3 p-4"><span className="rounded-lg px-3 py-2 text-xs font-extrabold tracking-wide text-white" style={{ background: route.color }}>{route.code}</span><span className="grid"><strong className="text-sm">{route.name}</strong><small className="text-[.65rem] text-slate-400">{route.stops.length} stops</small></span><ChevronDown size={18} /></summary><div className="border-t border-slate-200 p-5 dark:border-white/10">
-          <label className="flex items-center justify-between"><span className="grid"><strong className="text-sm">Route operating</strong><small className="mt-1 text-[.65rem] text-slate-400">Turn off during a service suspension</small></span><input className="size-5 accent-brand" type="checkbox" checked={route.enabled} onChange={(event) => updateRoute(routeIndex, 'enabled', event.target.checked)} /></label>
-          <div className="mt-5 grid grid-cols-3 gap-3 max-md:grid-cols-1">{[['start', 'First bus', 'time'], ['end', 'Last bus', 'time'], ['frequency', 'Frequency (min)', 'number']].map(([field, label, type]) => <label key={field} className="text-xs font-bold text-muted">{label}<input className={fieldClass} type={type} min={type === 'number' ? 10 : undefined} max={type === 'number' ? 180 : undefined} value={route.schedule[field]} onChange={(event) => updateRoute(routeIndex, field, type === 'number' ? Number(event.target.value) : event.target.value)} /></label>)}</div>
-          <div className="mt-6"><h2 className="text-xs font-bold text-muted">Stop fares</h2>{route.stops.map((stop, stopIndex) => <label key={stop.id} className="flex min-h-12 items-center justify-between border-b border-slate-100 text-sm dark:border-white/6"><span>{stop.name}</span><span className="flex items-center gap-2 text-muted">₹ <input className="w-20 rounded-lg border border-slate-200 bg-transparent p-2 text-right text-sm text-ink dark:border-white/10" type="number" min="0" step="10" value={stop.fare} onChange={(event) => updateFare(routeIndex, stopIndex, event.target.value)} /></span></label>)}</div>
-        </div></details>)}
-        {error && <p className="mt-4 flex items-center gap-2 text-sm text-red-700"><CircleAlert size={16} /> {error}</p>}
-        <div className="sticky bottom-4 mt-6 flex justify-end"><button className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand px-6 font-bold text-white shadow-xl shadow-brand/20 transition active:scale-[.98] disabled:opacity-60" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save changes'} <Check size={18} /></button></div>
-      </main>}
-    </div>
-  );
+	const updateDraft = (mutate) =>
+		setDraft((current) => {
+			const next = structuredClone(current);
+			mutate(next);
+			return next;
+		});
+
+	const updateTime = (routeIndex, direction, timeIndex, value) =>
+		updateDraft((next) => {
+			next.routes[routeIndex].timetables[direction][timeIndex] = value;
+		});
+
+	const addTime = (routeIndex, direction) =>
+		updateDraft((next) => {
+			const times = next.routes[routeIndex].timetables[direction];
+			times.push(nextTime(times.at(-1)));
+		});
+
+	const removeTime = (routeIndex, direction, timeIndex) =>
+		updateDraft((next) => {
+			const times = next.routes[routeIndex].timetables[direction];
+			if (times.length > 1) times.splice(timeIndex, 1);
+		});
+
+	const save = async () => {
+		setSaving(true);
+		setError('');
+		try {
+			const result = await api('/api/admin/service', {
+				method: 'PUT',
+				headers: { Authorization: `Bearer ${token}` },
+				body: JSON.stringify(draft)
+			});
+			setDraft(result);
+			onSaved(result);
+		} catch (requestError) {
+			setError(requestError.message);
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	return (
+		<div className="min-h-screen bg-[#f3f6f7] transition-colors duration-300 dark:bg-[#0b1116]">
+			<header className="mx-auto flex h-20 max-w-5xl items-center justify-between px-5">
+				<Brand />
+				<div className="flex items-center gap-2">
+					<a
+						href="/"
+						className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-muted no-underline hover:bg-white dark:hover:bg-white/8"
+					>
+						<ArrowLeft size={17} /> Back to website
+					</a>
+					<ThemeToggle />
+				</div>
+			</header>
+
+			{!token ? (
+				<main className="adaptive-material mx-auto mt-12 max-w-sm rounded-3xl border border-white bg-white/90 p-8 text-center shadow-[0_22px_60px_rgba(20,43,56,.11)] backdrop-blur-xl transition-colors duration-300 dark:border-white/10 dark:bg-slate-900/90 dark:shadow-[0_24px_70px_rgba(0,0,0,.35)]">
+					<span className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-brand-soft text-brand">
+						<LockKeyhole size={27} />
+					</span>
+					<h1 className="mt-5 text-2xl font-bold tracking-tight">Service admin</h1>
+					<p className="mt-2 text-sm leading-relaxed text-muted">
+						Enter the service PIN to update schedules, fares and alerts.
+					</p>
+					<form className="mt-6 text-left" onSubmit={login}>
+						<label className="text-xs font-bold text-slate-600 dark:text-slate-300">
+							Admin PIN
+							<input
+								className={fieldClass}
+								type="password"
+								inputMode="numeric"
+								value={pin}
+								onChange={(event) => setPin(event.target.value)}
+								placeholder="••••"
+								autoFocus
+							/>
+						</label>
+						{error && (
+							<p className="mt-3 flex items-center gap-2 text-xs text-red-700 dark:text-red-300">
+								<CircleAlert size={15} /> {error}
+							</p>
+						)}
+						<button className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand font-bold text-white transition active:scale-[.98]">
+							Continue <ArrowRight size={18} />
+						</button>
+					</form>
+					<small className="mt-3 block text-[.62rem] text-slate-400">
+						MVP demo PIN: 2468 · Set ADMIN_PIN in production.
+					</small>
+				</main>
+			) : (
+				<main className="mx-auto max-w-5xl px-5 pb-16">
+					<div className="mb-8 flex items-end justify-between gap-4 max-md:items-start">
+						<div>
+							<span className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[.12em] text-brand">
+								<Settings2 size={15} /> Service management
+							</span>
+							<h1 className="mt-3 text-4xl font-bold tracking-tight">Public journey data</h1>
+							<p className="mt-2 text-sm text-muted">Saved changes are immediately available through the API.</p>
+						</div>
+						<span className="flex shrink-0 items-center gap-2 rounded-full bg-brand-soft px-3 py-2 text-xs font-bold text-brand">
+							<i className="size-2 rounded-full bg-brand" /> Public
+						</span>
+					</div>
+
+					<section className="adaptive-material rounded-3xl border border-white bg-white/80 p-6 shadow-xl shadow-slate-900/5 backdrop-blur-xl transition-colors duration-300 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-black/20">
+						<div className="grid grid-cols-[12rem_1fr] gap-4 max-md:grid-cols-1">
+							<label className="text-xs font-bold text-muted">
+								Verified date
+								<input
+									className={fieldClass}
+									type="date"
+									value={draft.status.verifiedDate}
+									onChange={(event) => updateDraft((next) => { next.status.verifiedDate = event.target.value; })}
+								/>
+							</label>
+							<label className="text-xs font-bold text-muted">
+								Public announcement
+								<textarea
+									className={fieldClass}
+									rows="3"
+									value={draft.status.announcement}
+									onChange={(event) => updateDraft((next) => { next.status.announcement = event.target.value; })}
+								/>
+							</label>
+						</div>
+						<label className="mt-5 flex items-center justify-between gap-5 border-t border-slate-200 pt-5 dark:border-white/10">
+							<span className="grid gap-1">
+								<strong className="text-sm">Show announcement banner</strong>
+								<small className="text-[.68rem] text-slate-400">Display this announcement above the trip planner.</small>
+							</span>
+							<span className="relative shrink-0">
+								<input
+									className="peer sr-only"
+									type="checkbox"
+									checked={draft.status.announcementVisible !== false}
+									onChange={(event) => updateDraft((next) => { next.status.announcementVisible = event.target.checked; })}
+								/>
+								<span className="block h-7 w-12 rounded-full bg-slate-300 transition peer-checked:bg-brand" />
+								<span className="absolute top-1 left-1 size-5 rounded-full bg-white shadow-sm transition peer-checked:translate-x-5" />
+							</span>
+						</label>
+					</section>
+
+					{draft.routes.map((route, routeIndex) => (
+						<details
+							className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white transition-colors duration-300 dark:border-white/10 dark:bg-slate-900"
+							key={route.id}
+							open={routeIndex === 0}
+						>
+							<summary className="grid cursor-pointer list-none grid-cols-[auto_1fr_auto] items-center gap-3 p-4">
+								<span className="rounded-lg px-3 py-2 text-xs font-extrabold tracking-wide text-white" style={{ background: route.color }}>
+									{route.code}
+								</span>
+								<span className="grid">
+									<strong className="text-sm">{route.name}</strong>
+									<small className="text-[.65rem] text-slate-400">{route.stops.length} stops · irregular timetable</small>
+								</span>
+								<ChevronDown size={18} />
+							</summary>
+							<div className="border-t border-slate-200 p-5 dark:border-white/10">
+								<label className="flex items-center justify-between">
+									<span className="grid">
+										<strong className="text-sm">Route operating</strong>
+										<small className="mt-1 text-[.65rem] text-slate-400">Turn off during a service suspension</small>
+									</span>
+									<input
+										className="size-5 accent-brand"
+										type="checkbox"
+										checked={route.enabled}
+										onChange={(event) => updateDraft((next) => { next.routes[routeIndex].enabled = event.target.checked; })}
+									/>
+								</label>
+
+								{timetableSections.map(([direction, title, description]) => {
+									const times = route.timetables[direction];
+									return (
+										<section className="mt-6 rounded-2xl bg-slate-50 p-4 dark:bg-white/4" key={direction}>
+											<div className="flex items-start justify-between gap-4">
+												<div>
+													<h2 className="text-sm font-bold">{title}</h2>
+													<p className="mt-1 text-[.65rem] text-slate-400">{description} · {times.length} services</p>
+												</div>
+												<button
+													type="button"
+													className="flex min-h-9 items-center gap-2 rounded-lg bg-brand-soft px-3 text-xs font-bold text-brand transition active:scale-[.98]"
+													onClick={() => addTime(routeIndex, direction)}
+												>
+													<Plus size={14} /> Add time
+												</button>
+											</div>
+											<div className="mt-4 grid grid-cols-4 gap-2 max-md:grid-cols-2">
+												{times.map((time, timeIndex) => (
+													<div className="flex items-center gap-1" key={`${direction}-${timeIndex}`}>
+														<input
+															aria-label={`${title} departure ${timeIndex + 1}`}
+															className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2 py-2 text-sm font-semibold text-ink outline-none focus:border-brand/60 dark:border-white/10 dark:bg-white/6"
+															type="time"
+															value={time}
+															onChange={(event) => updateTime(routeIndex, direction, timeIndex, event.target.value)}
+														/>
+														<button
+															type="button"
+															aria-label={`Remove ${title} departure ${timeIndex + 1}`}
+															className="flex size-9 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-30 dark:hover:bg-red-400/10"
+															disabled={times.length === 1}
+															onClick={() => removeTime(routeIndex, direction, timeIndex)}
+														>
+															<Trash2 size={14} />
+														</button>
+													</div>
+												))}
+											</div>
+										</section>
+									);
+								})}
+
+								<div className="mt-6">
+									<h2 className="text-xs font-bold text-muted">Stop fares</h2>
+									{route.stops.map((stop, stopIndex) => (
+										<label className="flex min-h-12 items-center justify-between border-b border-slate-100 text-sm dark:border-white/6" key={`${stop.placeId}-${stopIndex}`}>
+											<span>{stop.name}</span>
+											<span className="flex items-center gap-2 text-muted">
+												₹
+												<input
+													className="w-20 rounded-lg border border-slate-200 bg-transparent p-2 text-right text-sm text-ink dark:border-white/10"
+													type="number"
+													min="0"
+													step="10"
+													value={stop.fare}
+													onChange={(event) => updateDraft((next) => { next.routes[routeIndex].stops[stopIndex].fare = Number(event.target.value); })}
+												/>
+											</span>
+										</label>
+									))}
+								</div>
+							</div>
+						</details>
+					))}
+
+					{error && (
+						<p className="mt-4 flex items-center gap-2 text-sm text-red-700 dark:text-red-300">
+							<CircleAlert size={16} /> {error}
+						</p>
+					)}
+					<div className="sticky bottom-4 mt-6 flex justify-end">
+						<button
+							className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-brand px-6 font-bold text-white shadow-xl shadow-brand/20 transition active:scale-[.98] disabled:opacity-60"
+							onClick={save}
+							disabled={saving}
+						>
+							{saving ? 'Saving…' : 'Save changes'} <Check size={18} />
+						</button>
+					</div>
+				</main>
+			)}
+		</div>
+	);
 }

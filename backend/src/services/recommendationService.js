@@ -1,31 +1,13 @@
 import {
-  SERVICE_AREA_RADIUS_KM,
-  isOutsideServiceArea,
-} from '../../../shared/serviceArea.mjs';
+  findNearestBoardingPlace,
+  getDirectionalTimes,
+  haversineKm,
+} from '../../../shared/serviceRouting.mjs';
 
-const EARTH_RADIUS_KM = 6371;
-
-export function haversineKm(a, b) {
-  const radians = (value) => value * Math.PI / 180;
-  const dLat = radians(b.lat - a.lat);
-  const dLng = radians(b.lng - a.lng);
-  const lat1 = radians(a.lat);
-  const lat2 = radians(b.lat);
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-  return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
-}
+export { haversineKm };
 
 export function nearestStop(data, point) {
-  const nearest = data.routes
-    .filter((route) => route.enabled)
-    .flatMap((route) => route.stops.map((stop) => ({ route, stop, distanceKm: haversineKm(point, stop) })))
-    .sort((a, b) => a.distanceKm - b.distanceKm)[0];
-  if (!nearest) return undefined;
-  return {
-    ...nearest,
-    outsideServiceArea: isOutsideServiceArea(nearest.distanceKm),
-    serviceAreaRadiusKm: SERVICE_AREA_RADIUS_KM,
-  };
+  return findNearestBoardingPlace(data, point);
 }
 
 function dateAtMinutes(reference, minutes, dayOffset = 0) {
@@ -78,10 +60,14 @@ export function recommendTrip(data, input) {
     ? null
     : Math.max(8, Math.round((nearest.distanceKm / 22) * 60 + 5));
 
-  const services = [-1, 0].flatMap((dayOffset) => nearest.route.times.map((time) => {
-    const origin = dateAtMinutes(flightTime, parseTime(time), dayOffset);
-    return serializeService(nearest.route, nearest.stop, origin);
-  })).sort((a, b) => new Date(a.departureTime) - new Date(b.departureTime));
+  const services = [-1, 0].flatMap((dayOffset) =>
+    nearest.candidates.flatMap(({ route, stop }) =>
+      getDirectionalTimes(route, 'to-airport').map((time) => {
+        const origin = dateAtMinutes(flightTime, parseTime(time), dayOffset);
+        return serializeService(route, stop, origin);
+      }),
+    ),
+  ).sort((a, b) => new Date(a.departureTime) - new Date(b.departureTime));
 
   const safeServices = services.filter((service) => new Date(service.airportArrivalTime) <= airportBy);
   const best = safeServices.at(-1) || null;
@@ -108,6 +94,8 @@ export function recommendTrip(data, input) {
       name: nearest.stop.name,
       landmark: nearest.stop.landmark,
       routeCode: nearest.route.code,
+      routeCodes: nearest.routeCodes,
+      placeId: nearest.placeId,
       distanceKm: Number(nearest.distanceKm.toFixed(1)),
       walkMinutes,
       lat: nearest.stop.lat,

@@ -1,4 +1,5 @@
 import { findNearestBoardingPoint } from './nearestStop.js';
+import { getDirectionalTimes } from '../../../shared/serviceRouting.mjs';
 
 const dateAtMinutes = (reference, minutes, dayOffset = 0) => {
 	const result = new Date(reference);
@@ -47,10 +48,12 @@ export const recommendTrip = (service, input) => {
 		: Math.max(8, Math.round((nearest.distanceKm / 22) * 60 + 5));
 	const services = [-1, 0]
 		.flatMap((dayOffset) =>
-			nearest.route.times.map((time) => {
-				const origin = dateAtMinutes(flightTime, parseTime(time), dayOffset);
-				return serializeService(nearest.route, nearest.stop, origin);
-			})
+			nearest.candidates.flatMap(({ route, stop }) =>
+				getDirectionalTimes(route, 'to-airport').map((time) => {
+					const origin = dateAtMinutes(flightTime, parseTime(time), dayOffset);
+					return serializeService(route, stop, origin);
+				})
+			)
 		)
 		.sort(
 			(left, right) =>
@@ -87,6 +90,8 @@ export const recommendTrip = (service, input) => {
 			name: nearest.stop.name,
 			landmark: nearest.stop.landmark,
 			routeCode: nearest.route.code,
+			routeCodes: nearest.routeCodes,
+			placeId: nearest.placeId,
 			distanceKm: nearest.distanceKm,
 			walkMinutes,
 			lat: nearest.stop.lat,

@@ -60,7 +60,8 @@ export default function Planner({ service, backendReady }) {
 	const [nearestMatch, setNearestMatch] = useState(null);
 	const [outsideServiceAreaOverride, setOutsideServiceAreaOverride] =
 		useState(false);
-	const [locationPermissionDenied, setLocationPermissionDenied] = useState(false);
+	const [locationPermissionDenied, setLocationPermissionDenied] =
+		useState(false);
 	const [flightType, setFlightType] = useState('domestic');
 	const [locating, setLocating] = useState(false);
 	const [nearestMessage, setNearestMessage] = useState('');
@@ -94,111 +95,119 @@ export default function Planner({ service, backendReady }) {
 		setError('');
 	};
 
-	const locate = useCallback(async (requestSource = 'user') => {
-		trackEvent('location_requested', { request_source: requestSource });
-		if (!navigator.geolocation) {
-			trackEvent('location_permission_result', {
-				permission_result: 'unsupported',
-				request_source: requestSource
-			});
-			return setError('Location detection is not supported in this browser.');
-		}
-		setLocating(true);
-		setError('');
-
-		if (navigator.permissions?.query) {
-			try {
-				const permission = await navigator.permissions.query({ name: 'geolocation' });
-				if (permission.state === 'denied') {
-					trackEvent('location_permission_result', {
-						permission_result: 'denied',
-						request_source: requestSource
-					});
-					setLocationPermissionDenied(true);
-					setLocating(false);
-					return;
-				}
-			} catch {
-				// Some mobile browsers expose geolocation without supporting this query.
-			}
-		}
-
-		navigator.geolocation.getCurrentPosition(
-			({ coords }) => {
-				try {
-					const point = { lat: coords.latitude, lng: coords.longitude };
-					const nearest = findNearestBoardingPoint(service, point);
-					const accuracyBand =
-						coords.accuracy <= 100
-							? 'precise'
-							: coords.accuracy <= 1000
-								? 'moderate'
-								: 'approximate';
-					setCoordinates(point);
-					setNearestMatch(nearest);
-					setOutsideServiceAreaOverride(false);
-					setResult(null);
-					setLocationPermissionDenied(false);
-					trackEvent('location_permission_result', {
-						permission_result: 'granted',
-						request_source: requestSource
-					});
-					trackEvent('location_captured', {
-						accuracy_band: accuracyBand,
-						route_code: nearest.routeCode,
-						stop_id: nearest.stop.id,
-						coverage_status: nearest.outsideServiceArea ? 'outside' : 'inside'
-					});
-					if (nearest.outsideServiceArea) {
-						trackEvent('location_outside_service_area', {
-							route_code: nearest.routeCode,
-							stop_id: nearest.stop.id,
-							coverage_status: 'outside'
-						});
-					}
-					const accuracyNote =
-						coords.accuracy > 1000
-							? ' Your phone shared an approximate location; enable Precise Location for a better match.'
-							: '';
-					setNearestMessage(
-						nearest.outsideServiceArea
-							? `Nearest supported stop: ${nearest.stop.name}, ${nearest.distanceKm} km away on ${nearest.routeCode}.${accuracyNote}`
-							: `${nearest.stop.name} is ${nearest.distanceKm} km away on ${nearest.routeCode}.${accuracyNote}`
-					);
-				} catch (err) {
-					setError(err.message);
-				} finally {
-					setLocating(false);
-				}
-			},
-			(locationError) => {
-				if (locationError.code === 1) {
-					trackEvent('location_permission_result', {
-						permission_result: 'denied',
-						request_source: requestSource
-					});
-					setLocationPermissionDenied(true);
-					setError('');
-					setLocating(false);
-					return;
-				}
-				const messages = {
-					2: 'Turn on Location Services on your phone, then try again.',
-					3: 'Location took too long. Turn on Location Services and try again.'
-				};
+	const locate = useCallback(
+		async (requestSource = 'user') => {
+			trackEvent('location_requested', { request_source: requestSource });
+			if (!navigator.geolocation) {
 				trackEvent('location_permission_result', {
-					permission_result: locationError.code === 2 ? 'unavailable' : 'timeout',
+					permission_result: 'unsupported',
 					request_source: requestSource
 				});
-				setError(
-					messages[locationError.code] ||
-						'We could not access your location. Try again.'
-				);
-				setLocating(false);
-			},
-			{ enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 }
-		);
-	}, [service]);
+				return setError('Location detection is not supported in this browser.');
+			}
+			setLocating(true);
+			setError('');
+
+			if (navigator.permissions?.query) {
+				try {
+					const permission = await navigator.permissions.query({
+						name: 'geolocation'
+					});
+					if (permission.state === 'denied') {
+						trackEvent('location_permission_result', {
+							permission_result: 'denied',
+							request_source: requestSource
+						});
+						setLocationPermissionDenied(true);
+						setLocating(false);
+						return;
+					}
+				} catch {
+					// Some mobile browsers expose geolocation without supporting this query.
+				}
+			}
+
+			navigator.geolocation.getCurrentPosition(
+				({ coords }) => {
+					try {
+						const point = { lat: coords.latitude, lng: coords.longitude };
+						const nearest = findNearestBoardingPoint(service, point);
+						const routeLabel = (nearest.routeCodes || [nearest.routeCode]).join(
+							' / '
+						);
+						const accuracyBand =
+							coords.accuracy <= 100
+								? 'precise'
+								: coords.accuracy <= 1000
+									? 'moderate'
+									: 'approximate';
+						setCoordinates(point);
+						setNearestMatch(nearest);
+						setOutsideServiceAreaOverride(false);
+						setResult(null);
+						setLocationPermissionDenied(false);
+						trackEvent('location_permission_result', {
+							permission_result: 'granted',
+							request_source: requestSource
+						});
+						trackEvent('location_captured', {
+							accuracy_band: accuracyBand,
+							route_code: nearest.routeCode,
+							stop_id: nearest.stop.id,
+							coverage_status: nearest.outsideServiceArea ? 'outside' : 'inside'
+						});
+						if (nearest.outsideServiceArea) {
+							trackEvent('location_outside_service_area', {
+								route_code: nearest.routeCode,
+								stop_id: nearest.stop.id,
+								coverage_status: 'outside'
+							});
+						}
+						const accuracyNote =
+							coords.accuracy > 1000
+								? ' Your phone shared an approximate location; enable Precise Location for a better match.'
+								: '';
+						setNearestMessage(
+							nearest.outsideServiceArea
+								? `Nearest supported stop: ${nearest.stop.name}, ${nearest.distanceKm} km away on ${routeLabel}.${accuracyNote}`
+								: `${nearest.stop.name} is ${nearest.distanceKm} km away on ${routeLabel}.${accuracyNote}`
+						);
+					} catch (err) {
+						setError(err.message);
+					} finally {
+						setLocating(false);
+					}
+				},
+				(locationError) => {
+					if (locationError.code === 1) {
+						trackEvent('location_permission_result', {
+							permission_result: 'denied',
+							request_source: requestSource
+						});
+						setLocationPermissionDenied(true);
+						setError('');
+						setLocating(false);
+						return;
+					}
+					const messages = {
+						2: 'Turn on Location Services on your phone, then try again.',
+						3: 'Location took too long. Turn on Location Services and try again.'
+					};
+					trackEvent('location_permission_result', {
+						permission_result: locationError.code === 2 ? 'unavailable' : 'timeout',
+						request_source: requestSource
+					});
+					setError(
+						messages[locationError.code] ||
+							'We could not access your location. Try again.'
+					);
+					setLocating(false);
+				},
+				{ enableHighAccuracy: true, timeout: 15_000, maximumAge: 0 }
+			);
+		},
+		[service]
+	);
 
 	useEffect(() => {
 		if (
@@ -218,10 +227,7 @@ export default function Planner({ service, backendReady }) {
 				return;
 			}
 			setLocationPermissionDenied(false);
-			if (
-				permissionStatus.state === 'granted' &&
-				!autoLocateAttempted.current
-			) {
+			if (permissionStatus.state === 'granted' && !autoLocateAttempted.current) {
 				autoLocateAttempted.current = true;
 				locate('automatic');
 			}
@@ -361,12 +367,12 @@ export default function Planner({ service, backendReady }) {
 				<label className={fieldLabel}>Where are you starting from?</label>
 				<button
 					type="button"
-					className={`flex min-h-18 w-full items-center gap-4 rounded-2xl border px-4 text-left transition-[transform,background-color,border-color] active:scale-[.99] disabled:cursor-wait ${coordinates ? outsideServiceArea ? 'border-amber-300/70 bg-amber-50 dark:border-amber-300/20 dark:bg-amber-300/8' : 'border-brand/30 bg-brand-soft' : 'border-slate-200 bg-slate-50 hover:border-brand/30 hover:bg-brand-soft dark:border-white/10 dark:bg-white/5'}`}
+					className={`flex min-h-18 w-full items-center gap-4 rounded-2xl border px-4 text-left transition-[transform,background-color,border-color] active:scale-[.99] disabled:cursor-wait ${coordinates ? (outsideServiceArea ? 'border-amber-300/70 bg-amber-50 dark:border-amber-300/20 dark:bg-amber-300/8' : 'border-brand/30 bg-brand-soft') : 'border-slate-200 bg-slate-50 hover:border-brand/30 hover:bg-brand-soft dark:border-white/10 dark:bg-white/5'}`}
 					onClick={() => locate('user')}
 					disabled={locating}
 				>
 					<span
-						className={`relative flex size-11 shrink-0 items-center justify-center rounded-xl ${coordinates ? outsideServiceArea ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-brand text-white shadow-lg shadow-brand/20' : 'bg-brand-soft text-brand'}`}
+						className={`relative flex size-11 shrink-0 items-center justify-center rounded-xl ${coordinates ? (outsideServiceArea ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-brand text-white shadow-lg shadow-brand/20') : 'bg-brand-soft text-brand'}`}
 					>
 						{coordinates ? (
 							<MapPin size={22} fill="currentColor" />
@@ -374,7 +380,9 @@ export default function Planner({ service, backendReady }) {
 							<LocateFixed size={21} />
 						)}
 						{coordinates && (
-							<span className={`absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full border-2 bg-white dark:bg-slate-900 ${outsideServiceArea ? 'border-amber-100 text-amber-600 dark:border-amber-900' : 'border-brand-soft text-brand'}`}>
+							<span
+								className={`absolute -right-1 -bottom-1 flex size-5 items-center justify-center rounded-full border-2 bg-white dark:bg-slate-900 ${outsideServiceArea ? 'border-amber-100 text-amber-600 dark:border-amber-900' : 'border-brand-soft text-brand'}`}
+							>
 								<Check size={11} strokeWidth={3} />
 							</span>
 						)}
@@ -402,7 +410,9 @@ export default function Planner({ service, backendReady }) {
 						</small>
 					</span>
 					{coordinates && !locating && (
-						<span className={`rounded-full bg-white/70 px-3 py-1 text-[.62rem] font-bold dark:bg-white/10 ${outsideServiceArea ? 'text-amber-700 dark:text-amber-200' : 'text-brand'}`}>
+						<span
+							className={`rounded-full bg-white/70 px-3 py-1 text-[.62rem] font-bold dark:bg-white/10 ${outsideServiceArea ? 'text-amber-700 dark:text-amber-200' : 'text-brand'}`}
+						>
 							Update
 						</span>
 					)}
@@ -420,7 +430,9 @@ export default function Planner({ service, backendReady }) {
 								<strong className="text-sm">Allow location for this website</strong>
 								<ol className="mt-2 list-decimal space-y-1 pl-4 text-[.7rem] leading-relaxed text-amber-900/75 dark:text-amber-100/70">
 									<li>Tap the site-controls icon beside your browser address bar.</li>
-									<li>Open Permissions or Website Settings, then set Location to Allow.</li>
+									<li>
+										Open Permissions or Website Settings, then set Location to Allow.
+									</li>
 									<li>Make sure Location Services are turned on for your phone.</li>
 									<li>Make sure you refresh the page after these changes.</li>
 								</ol>
@@ -432,7 +444,7 @@ export default function Planner({ service, backendReady }) {
 							onClick={() => locate('retry')}
 							disabled={locating}
 						>
-							{locating ? 'Checking permission…' : 'I allowed it — try again'}
+							{locating ? 'Checking permission…' : 'I allowed it - try again'}
 						</button>
 					</div>
 				)}
@@ -446,18 +458,21 @@ export default function Planner({ service, backendReady }) {
 								<CircleAlert size={18} aria-hidden="true" />
 							</span>
 							<div>
-								<strong className="text-sm">You’re outside the AeroExpress service area</strong>
+								<strong className="text-sm">
+									You’re outside the AeroExpress service area
+								</strong>
 								<p className="mt-1 text-[.7rem] leading-relaxed text-amber-900/75 dark:text-amber-100/70">
 									The nearest supported stop is {nearestMatch.stop.name} on{' '}
-									{nearestMatch.routeCode}, {nearestMatch.distanceKm} km away.
+									{(nearestMatch.routeCodes || [nearestMatch.routeCode]).join(' / ')},{' '}
+									{nearestMatch.distanceKm} km away.
 								</p>
 							</div>
 						</div>
 						{outsideServiceAreaOverride && (
 							<p className="mt-3 flex items-start gap-2 rounded-xl bg-white/60 p-3 text-[.7rem] leading-relaxed dark:bg-white/6">
 								<Check className="mt-0.5 shrink-0" size={15} strokeWidth={3} />
-								Planning from {nearestMatch.stop.name}. Travel time to this stop is
-								 not included—arrive before the displayed bus boarding time.
+								Planning from {nearestMatch.stop.name}. Travel time to this stop is not
+								included - arrive before the displayed bus boarding time.
 							</p>
 						)}
 						<div className="mt-3 grid grid-cols-2 gap-2 max-sm:grid-cols-1">

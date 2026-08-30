@@ -1,4 +1,5 @@
 import { nearestStop, recommendTrip } from '../services/recommendationService.js';
+import { getDirectionalTimes } from '../../../shared/serviceRouting.mjs';
 
 export class ServiceController {
   constructor(serviceModel) {
@@ -18,6 +19,7 @@ export class ServiceController {
     res.json({
       routeId: nearest.route.id,
       routeCode: nearest.route.code,
+      routeCodes: nearest.routeCodes,
       stop: nearest.stop,
       distanceKm: Number(nearest.distanceKm.toFixed(1)),
       outsideServiceArea: nearest.outsideServiceArea,
@@ -39,7 +41,7 @@ export class ServiceController {
     const stop = route.stops.find((item) => item.id === req.query.stopId) || route.stops[0];
     const direction = req.query.direction === 'from-airport' ? 'from-airport' : 'to-airport';
     const now = new Date();
-    const services = route.times.map((time) => {
+    const services = getDirectionalTimes(route, direction).map((time) => {
       const [hours, minutes] = time.split(':').map(Number);
       const departure = new Date(now);
       departure.setHours(hours, minutes, 0, 0);

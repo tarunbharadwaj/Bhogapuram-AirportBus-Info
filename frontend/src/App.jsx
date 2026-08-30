@@ -6,14 +6,15 @@ import HomePage from './pages/HomePage.jsx';
 import { LoadingScreen } from './components/SiteSections.jsx';
 import { FALLBACK_SERVICE } from './data/fallbackService.js';
 
-const SERVICE_CACHE_KEY = 'bhogapuram-service-cache-v1';
+const SERVICE_CACHE_KEY = 'bhogapuram-service-cache-v2';
 const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
 const isAdminPage = currentPath === '/service-admin';
 const isFeedbackPage = currentPath === '/feedback';
 
 const isServiceData = (value) =>
 	Boolean(
-		value?.status &&
+		value?.schemaVersion === 2 &&
+			value?.status &&
 			value?.airport &&
 			Array.isArray(value.routes) &&
 			value.routes.length &&
