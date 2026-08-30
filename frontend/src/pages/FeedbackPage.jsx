@@ -8,7 +8,7 @@ import {
 	Send,
 	ShieldCheck
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import Brand from '../components/Brand.jsx';
 import ThemeToggle from '../components/ThemeToggle.jsx';
 import { trackEvent } from '../lib/analytics.js';
@@ -42,14 +42,6 @@ export default function FeedbackPage() {
 	const messageRef = useRef(null);
 	const emailRef = useRef(null);
 	const configured = isValidFeedbackEndpoint(endpoint);
-
-	useEffect(() => {
-		const previousTitle = document.title;
-		document.title = 'Feedback · Bhogapuram Airport Bus Info';
-		return () => {
-			document.title = previousTitle;
-		};
-	}, []);
 
 	const updateField = (field, value) => {
 		setForm((current) => ({ ...current, [field]: value }));

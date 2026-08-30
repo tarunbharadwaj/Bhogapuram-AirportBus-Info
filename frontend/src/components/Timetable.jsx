@@ -8,16 +8,30 @@ const buildTimetable = (service, routeId, stopId, direction) => {
 	const route = service.routes.find((item) => item.id === routeId) || service.routes[0];
 	const stop = route.stops.find((item) => item.id === stopId) || route.stops[0];
 	const now = new Date();
-	const services = getDirectionalTimes(route, direction).map((time) => {
-		const [hours, minutes] = time.split(':').map(Number);
-		const departure = new Date(now);
-		departure.setHours(hours, minutes, 0, 0);
-		if (direction === 'to-airport') departure.setMinutes(departure.getMinutes() + stop.offset);
-		const arrival = new Date(departure.getTime() + stop.journeyMinutes * 60_000);
-		return { departure: departure.toISOString(), arrival: arrival.toISOString() };
-	});
+	const services = [0, 1].flatMap((dayOffset) =>
+		getDirectionalTimes(route, direction).map((time) => {
+			const [hours, minutes] = time.split(':').map(Number);
+			const departure = new Date(now);
+			departure.setDate(departure.getDate() + dayOffset);
+			departure.setHours(hours, minutes, 0, 0);
+			if (direction === 'to-airport')
+				departure.setMinutes(departure.getMinutes() + stop.offset);
+			const arrival = new Date(
+				departure.getTime() + stop.journeyMinutes * 60_000
+			);
+			return {
+				departure: departure.toISOString(),
+				arrival: arrival.toISOString()
+			};
+		})
+	);
 	return { route, stop, direction, services, verifiedDate: service.status.verifiedDate };
 };
+
+const isSameLocalDate = (left, right) =>
+	left.getFullYear() === right.getFullYear() &&
+	left.getMonth() === right.getMonth() &&
+	left.getDate() === right.getDate();
 
 export default function Timetable({ service }) {
 	const sectionRef = useRef(null);
@@ -54,11 +68,13 @@ export default function Timetable({ service }) {
 			direction: data.direction
 		});
 	}, [data.direction, data.route.code, data.stop.id, sectionVisible]);
-	const upcoming =
-		data.services
-			.filter((item) => new Date(item.departure).getTime() >= Date.now())
-			.slice(0, 5);
-	const visible = upcoming.length ? upcoming : data.services.slice(0, 5);
+	const now = new Date();
+	const visible = data.services
+		.filter((item) => new Date(item.departure).getTime() >= now.getTime())
+		.slice(0, 5);
+	const nextBusIsTomorrow = Boolean(
+		visible[0] && !isSameLocalDate(new Date(visible[0].departure), now)
+	);
 	const toggle = (active) =>
 		`h-10 rounded-lg text-xs font-bold transition ${active ? 'bg-white text-ink shadow-sm dark:bg-white/12' : 'text-muted'}`;
 
@@ -71,7 +87,7 @@ export default function Timetable({ service }) {
 			<div className="mb-8 flex items-end justify-between gap-8 max-md:block">
 				<div>
 					<span className="text-xs font-extrabold uppercase tracking-[.12em] text-brand">
-						Today’s schedule
+						Daily schedule
 					</span>
 					<h2 className="mt-3 text-[clamp(2rem,4vw,3.15rem)] font-bold leading-none tracking-[-.045em]">
 						Know your next departure.
@@ -150,15 +166,15 @@ export default function Timetable({ service }) {
 					{visible.map((item, index) => (
 						<div
 							key={`${item.departure}-${index}`}
-							className={`grid min-h-14 grid-cols-[2.2rem_auto_auto_1fr_auto] items-center gap-3 border-t border-slate-200 text-sm dark:border-white/10 ${index === 0 && upcoming.length ? 'rounded-xl border border-brand/20 bg-brand-soft px-3' : ''}`}
+							className={`grid min-h-14 grid-cols-[2.2rem_auto_auto_1fr_auto] items-center gap-3 border-t border-slate-200 text-sm dark:border-white/10 ${index === 0 ? 'rounded-xl border border-brand/20 bg-brand-soft px-3' : ''}`}
 						>
 							<span className="flex size-8 items-center justify-center rounded-lg bg-brand-soft text-brand">
 								<BusFront size={17} />
 							</span>
 							<strong>{formatTime(item.departure)}</strong>
-							{index === 0 && upcoming.length && (
-								<em className="rounded-full bg-brand px-2 py-1 text-[.55rem] font-extrabold not-italic uppercase tracking-wider text-white">
-									Next
+							{index === 0 && (
+								<em className="whitespace-nowrap rounded-full bg-brand px-2 py-1 text-[.55rem] font-extrabold not-italic uppercase tracking-wider text-white">
+									{nextBusIsTomorrow ? 'Next bus · Tomorrow' : 'Next bus'}
 								</em>
 							)}
 							<span className="h-px bg-gradient-to-r from-slate-200 to-transparent dark:from-white/15" />

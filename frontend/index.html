@@ -4,6 +4,7 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="theme-color" content="#f4f7f9" />
+		<meta name="robots" content="index, follow" />
 		<meta
 			name="description"
 			content="Find the right AeroExpress bus from Visakhapatnam to Bhogapuram Airport based on where you are and when your flight leaves."
@@ -14,21 +15,28 @@
 			content="Timings, stops, fares and flight-aware AeroExpress bus recommendations."
 		/>
 		<meta property="og:type" content="website" />
-    <link rel="icon" type="image/svg+xml" href="/bus-favicon.svg" />
-    <title>Bhogapuram Airport Bus Info</title>
-    <script>
-      (() => {
-        const savedTheme = localStorage.getItem('theme');
-        const useDark = savedTheme === 'dark' || (!savedTheme && matchMedia('(prefers-color-scheme: dark)').matches);
-        document.documentElement.classList.toggle('dark', useDark);
-        document.querySelector('meta[name="theme-color"]').setAttribute('content', useDark ? '#0b1116' : '#f4f7f9');
-      })();
-    </script>
+		<meta property="og:url" content="https://www.vizagairportbus.com/" />
+		<link rel="canonical" href="https://www.vizagairportbus.com/" />
+		<link rel="icon" type="image/svg+xml" href="/bus-favicon.svg" />
+		<title>Bhogapuram Airport Bus Info</title>
+		<script>
+			(() => {
+				const savedTheme = localStorage.getItem('theme');
+				const useDark =
+					savedTheme === 'dark' ||
+					(!savedTheme && matchMedia('(prefers-color-scheme: dark)').matches);
+				document.documentElement.classList.toggle('dark', useDark);
+				document
+					.querySelector('meta[name="theme-color"]')
+					.setAttribute('content', useDark ? '#0b1116' : '#f4f7f9');
+			})();
+		</script>
 		<script type="application/ld+json">
 			{
 				"@context": "https://schema.org",
 				"@type": "WebApplication",
 				"name": "Bhogapuram Airport Bus Planner",
+				"url": "https://www.vizagairportbus.com/",
 				"applicationCategory": "TravelApplication",
 				"operatingSystem": "Web"
 			}

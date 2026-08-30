@@ -1,0 +1,5 @@
+/service-admin
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+/service-admin/*
+  X-Robots-Tag: noindex, nofollow, noarchive
