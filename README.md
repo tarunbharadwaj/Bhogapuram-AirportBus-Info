@@ -1,4 +1,4 @@
-# Bhogapuram Airport Bus MVP
+# Vizag Airport Bus MVP
 
 A mobile-first React and Node.js website that recommends an AeroExpress bus based on a traveller's location and flight departure time.
 

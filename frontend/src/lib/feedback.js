@@ -54,7 +54,7 @@ export const submitFeedback = async (
 	const payload = {
 		category: categoryLabel,
 		message: message.trim(),
-		_subject: 'New Bhogapuram Airport Bus website feedback',
+		_subject: 'New Vizag Airport Bus website feedback',
 		_template: 'table',
 		_captcha: 'false',
 		_honey: honey

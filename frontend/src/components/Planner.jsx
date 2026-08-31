@@ -328,7 +328,7 @@ export default function Planner({ service, backendReady }) {
 					<Sparkles size={15} /> Flight-aware bus planning
 				</span> */}
 				<h1 className="my-4 text-[clamp(2.75rem,5vw,4.7rem)] font-bold leading-[.99] tracking-[-.055em]">
-					Get to Bhogapuram Airport on time,
+					Get to Vizag Airport on time,
 					<br />
 					<em className="not-italic text-brand">every time.</em>
 				</h1>
@@ -337,7 +337,7 @@ export default function Planner({ service, backendReady }) {
 					work backwards to the safest AeroExpress. */}
 					Tell us where you're starting from and when your flight departs. We'll find
 					the nearest Aero Express stop and recommend the safest bus to get you to
-					Bhogapuram Airport on time.
+					Vizag Airport on time.
 				</p>
 				<div className="mt-7 flex gap-5 text-xs font-semibold text-slate-600 dark:text-slate-300 max-lg:justify-center max-md:flex-wrap">
 					<span className="flex items-center gap-2">
@@ -358,7 +358,7 @@ export default function Planner({ service, backendReady }) {
 						<span className="flex size-7 items-center justify-center rounded-full bg-brand-soft text-xs font-extrabold text-brand">
 							1
 						</span>
-						<h2 className="text-lg font-bold tracking-tight">Plan to Bhogapuram</h2>
+						<h2 className="text-lg font-bold tracking-tight">Plan to Vizag</h2>
 					</div>
 					<span className="text-[.68rem] font-semibold text-slate-400">
 						No login needed

@@ -19,7 +19,7 @@ const fieldClass =
 
 const timetableSections = [
 	['toAirport', 'City → Airport', 'Published departures from Old Gajuwaka'],
-	['fromAirport', 'Airport → City', 'Published departures from Bhogapuram Airport']
+	['fromAirport', 'Airport → City', 'Published departures from Vizag Airport']
 ];
 
 const nextTime = (value = '00:00') => {

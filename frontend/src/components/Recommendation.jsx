@@ -39,7 +39,7 @@ export default function Recommendation({ result }) {
 			result.nearestStop.lat,
 			result.nearestStop.lng
 		);
-		const text = `Bhogapuram Airport Bus Details\n\n🚌 Bus Number: ${result.best.routeCode}\n📍 Boarding Point: ${result.best.stopName}\n🕐 Board Bus At: ${formatTime(result.best.departureTime).toUpperCase()}\n💰 Estimated Fare: ₹${result.best.fare}\n🗺️ Boarding Point Map: ${boardingPointMap}`;
+		const text = `Vizag Airport Bus Details\n\n🚌 Bus Number: ${result.best.routeCode}\n📍 Boarding Point: ${result.best.stopName}\n🕐 Board Bus At: ${formatTime(result.best.departureTime).toUpperCase()}\n💰 Estimated Fare: ₹${result.best.fare}\n🗺️ Boarding Point Map: ${boardingPointMap}`;
 		window.open(
 			`https://wa.me/?text=${encodeURIComponent(text)}`,
 			'_blank',

@@ -11,7 +11,7 @@ export default function Brand({ compact = false }) {
 			</span>
 			{!compact && (
 				<span className="grid leading-none">
-					<strong className="text-[.97rem] tracking-[-.02em]">Bhogapuram</strong>
+					<strong className="text-[.97rem] tracking-[-.02em]">Vizag</strong>
 					<small className="mt-1 text-[.62rem] font-bold uppercase tracking-[.13em] text-muted">
 						Airport Bus
 					</small>

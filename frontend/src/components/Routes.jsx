@@ -143,7 +143,7 @@ export default function Routes({ service }) {
 								<Plane size={13} />
 							</span>
 							<span className="grid gap-1">
-								<strong className="text-sm">Bhogapuram Airport</strong>
+								<strong className="text-sm">Vizag Airport</strong>
 								<small className="text-[.65rem] text-slate-400">Departures terminal</small>
 							</span>
 							<strong className="text-sm">Arrive</strong>

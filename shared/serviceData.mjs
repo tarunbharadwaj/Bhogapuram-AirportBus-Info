@@ -6,7 +6,7 @@ export const SERVICE_DATA_SCHEMA_VERSION = 2;
 
 export const AIRPORT = {
 	id: 'bhogapuram-airport',
-	name: 'Bhogapuram Airport',
+	name: 'Vizag Airport',
 	fullName: 'Alluri Sitarama Raju International Airport',
 	lat: 17.9972,
 	lng: 83.4799
@@ -222,7 +222,7 @@ export const DEFAULT_SERVICE_DATA = {
 					id: 'marikavalasa-stop',
 					placeId: 'marikavalasa',
 					name: 'Marikavalasa',
-					landmark: 'Marikavalasa bus stop - Bhogapuram direction',
+					landmark: 'Marikavalasa bus stop - Vizag direction',
 					coordinateQuality: 'user-provided-mapped-stop',
 					lat: 17.8371327,
 					lng: 83.358547,
@@ -324,7 +324,7 @@ export const DEFAULT_SERVICE_DATA = {
 					id: 'marikavalasa-stop',
 					placeId: 'marikavalasa',
 					name: 'Marikavalasa',
-					landmark: 'Marikavalasa bus stop - Bhogapuram direction',
+					landmark: 'Marikavalasa bus stop - Vizag direction',
 					coordinateQuality: 'user-provided-mapped-stop',
 					lat: 17.8371327,
 					lng: 83.358547,
@@ -334,7 +334,7 @@ export const DEFAULT_SERVICE_DATA = {
 					id: 'anandapuram-stop',
 					placeId: 'anandapuram',
 					name: 'Anandapuram',
-					landmark: 'Anandapuram bus platform - Bhogapuram direction',
+					landmark: 'Anandapuram bus platform - Vizag direction',
 					coordinateQuality: 'directional-best-match',
 					lat: 17.89482,
 					lng: 83.37695,

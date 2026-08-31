@@ -155,7 +155,7 @@ export default function Timetable({ service }) {
 						<span>
 							{direction === 'to-airport'
 								? `From ${data?.stop.name || route.stops[0].name}`
-								: 'From Bhogapuram Airport'}
+								: 'From Vizag Airport'}
 						</span>
 						<span className="text-right">
 							{direction === 'to-airport'

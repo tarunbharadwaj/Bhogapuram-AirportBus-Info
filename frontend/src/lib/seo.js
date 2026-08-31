@@ -2,29 +2,29 @@ const SITE_URL = 'https://www.vizagairportbus.com';
 
 const pageMetadata = {
 	'/': {
-		title: 'Bhogapuram Airport Bus Info',
+		title: 'Vizag Airport Bus Info',
 		description:
-			'Find the right AeroExpress bus from Visakhapatnam to Bhogapuram Airport based on where you are and when your flight leaves.',
-		openGraphTitle: 'Bhogapuram Airport Bus Planner',
+			'Find the right AeroExpress bus from Visakhapatnam to Vizag Airport based on where you are and when your flight leaves.',
+		openGraphTitle: 'Vizag Airport Bus Planner',
 		openGraphDescription:
 			'Timings, stops, fares and flight-aware AeroExpress bus recommendations.',
 		url: `${SITE_URL}/`,
 		robots: 'index, follow'
 	},
 	'/feedback': {
-		title: 'Feedback | Bhogapuram Airport Bus Info',
+		title: 'Feedback | Vizag Airport Bus Info',
 		description:
-			'Share feedback, suggestions or complaints to help improve the Vizag and Bhogapuram Airport bus planner.',
-		openGraphTitle: 'Feedback | Bhogapuram Airport Bus Info',
+			'Share feedback, suggestions or complaints to help improve the Vizag Airport bus planner.',
+		openGraphTitle: 'Feedback | Vizag Airport Bus Info',
 		openGraphDescription:
-			'Share feedback and help improve the Vizag and Bhogapuram Airport bus planner.',
+			'Share feedback and help improve the Vizag Airport bus planner.',
 		url: `${SITE_URL}/feedback`,
 		robots: 'index, follow'
 	},
 	'/service-admin': {
-		title: 'Service Admin | Bhogapuram Airport Bus Info',
+		title: 'Service Admin | Vizag Airport Bus Info',
 		description: 'Service administration page.',
-		openGraphTitle: 'Service Admin | Bhogapuram Airport Bus Info',
+		openGraphTitle: 'Service Admin | Vizag Airport Bus Info',
 		openGraphDescription: 'Service administration page.',
 		url: `${SITE_URL}/service-admin`,
 		robots: 'noindex, nofollow, noarchive'

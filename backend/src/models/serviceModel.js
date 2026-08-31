@@ -55,6 +55,8 @@ export class ServiceModel {
 		const next = clone(payload);
 		if (!next.status || !Array.isArray(next.routes) || !next.routes.length)
 			throw new Error('Invalid service data.');
+		if (next.airport?.id === DEFAULT_DATA.airport.id)
+			next.airport.name = DEFAULT_DATA.airport.name;
 		if (typeof next.status.announcementVisible !== 'boolean')
 			next.status.announcementVisible = true;
 		next.schemaVersion = SERVICE_DATA_SCHEMA_VERSION;
@@ -87,6 +89,8 @@ export class ServiceModel {
 
 			route.stops.forEach((stop) => {
 				stop.placeId ||= stop.id;
+				if (typeof stop.landmark === 'string')
+					stop.landmark = stop.landmark.replace(/Bhogapuram/gi, 'Vizag');
 				stop.fare = Math.max(0, Number(stop.fare));
 				stop.offset = Math.max(0, Number(stop.offset));
 				stop.journeyMinutes = Math.max(1, Number(stop.journeyMinutes));

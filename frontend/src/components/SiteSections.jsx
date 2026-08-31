@@ -83,9 +83,9 @@ export function Footer() {
 			<div className="flex items-center gap-3">
 				<Brand compact />
 				<div>
-					<strong className="text-sm">Bhogapuram Airport Bus Info</strong>
+					<strong className="text-sm">Vizag Airport Bus Info</strong>
 					<p className="mt-1 text-[.68rem] text-muted">
-						Making your next trip to Bhogapuram Airport easier.
+						Making your next trip to Vizag Airport easier.
 					</p>
 				</div>
 			</div>
