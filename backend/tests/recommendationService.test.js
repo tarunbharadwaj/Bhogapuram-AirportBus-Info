@@ -7,6 +7,8 @@ import { ServiceController } from '../src/controllers/serviceController.js';
 import { DEFAULT_DATA } from '../src/data/defaultData.js';
 import { ServiceModel } from '../src/models/serviceModel.js';
 import { nearestStop, recommendTrip } from '../src/services/recommendationService.js';
+import { findAirportDepartureOptions } from '../src/services/airportDepartureService.js';
+import { getAirportDepartureOptions } from '../../shared/airportDepartures.mjs';
 
 test('finds the closest boarding point', () => {
   const result = nearestStop(DEFAULT_DATA, { lat: 17.743, lng: 83.232 });
@@ -89,20 +91,41 @@ test('serves the requested timetable direction through the API controller', () =
     direction: 'from-airport',
   } }, response);
   assert.equal(responses[0].direction, 'from-airport');
-  assert.equal(
-    new Date(responses[0].services[0].departure).getHours(),
-    8,
+  const indiaTime = (value) => new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(value));
+  assert.equal(indiaTime(responses[0].services[0].departure), '08:15');
+  assert.equal(indiaTime(responses[0].services.at(-1).departure), '23:35');
+});
+
+test('keeps backend and shared airport departure results identical', () => {
+  const input = {
+    destinationPlaceId: 'old-gajuwaka',
+    readyAt: '2026-09-01T19:30:00+05:30',
+  };
+  const options = { now: new Date('2026-09-01T12:00:00+05:30') };
+  assert.deepEqual(
+    findAirportDepartureOptions(DEFAULT_DATA, input, options),
+    getAirportDepartureOptions(DEFAULT_DATA, input, options),
   );
-  assert.equal(
-    new Date(responses[0].services[0].departure).getMinutes(),
-    15,
-  );
-  assert.equal(
-    new Date(responses[0].services.at(-1).departure).getHours(),
-    23,
-  );
-  assert.equal(
-    new Date(responses[0].services.at(-1).departure).getMinutes(),
-    35,
-  );
+});
+
+test('serves airport departure options through the API controller', () => {
+  const controller = new ServiceController({ getAll: () => DEFAULT_DATA });
+  const responses = [];
+  const response = {
+    json: (body) => responses.push(body),
+    status: () => response,
+  };
+  controller.createAirportDepartures({ body: {
+    destinationPlaceId: 'nad-junction',
+    readyAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+  } }, response);
+  assert.equal(responses[0].direction, 'from-airport');
+  assert.equal(responses[0].destination.placeId, 'nad-junction');
+  assert.ok(responses[0].options.length > 0);
+  assert.ok(responses[0].options.every((option) => option.routeCode === 'ASR-1'));
 });

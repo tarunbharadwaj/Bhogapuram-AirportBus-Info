@@ -6,6 +6,7 @@ export const createServiceRoutes = (controller) => {
   router.get('/service', controller.getService);
   router.get('/nearest', controller.getNearest);
   router.post('/recommendations', controller.createRecommendation);
+  router.post('/airport-departures', controller.createAirportDepartures);
   router.get('/timetable', controller.getTimetable);
   return router;
 };

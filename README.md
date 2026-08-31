@@ -33,6 +33,11 @@ npm run dev
 - Frontend: `http://localhost:5173`
 - Backend API: `http://localhost:4000/api`
 
+The public trip-planning APIs include `POST /api/recommendations` for city-to-airport
+planning and `POST /api/airport-departures` for the next airport-to-city departures.
+The latter accepts `destinationPlaceId` and an ISO `readyAt` time, and evaluates
+published schedules in `Asia/Kolkata`.
+
 The Vite development server proxies `/api` requests to the backend.
 
 ## Admin

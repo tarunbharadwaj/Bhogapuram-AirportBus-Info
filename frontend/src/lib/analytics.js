@@ -9,9 +9,12 @@ const allowedEvents = new Set([
 	'outside_service_area_override',
 	'plan_generated',
 	'no_safe_bus_found',
+	'airport_to_city_plan_generated',
+	'airport_to_city_plan_unavailable',
 	'route_viewed',
 	'timetable_viewed',
 	'boarding_map_opened',
+	'destination_map_opened',
 	'whatsapp_shared',
 	'feedback_submitted'
 ]);
@@ -25,6 +28,7 @@ const allowedParameters = new Set([
 	'stop_id',
 	'flight_type',
 	'direction',
+	'option_count',
 	'map_type',
 	'feedback_type'
 ]);

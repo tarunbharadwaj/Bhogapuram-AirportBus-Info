@@ -19,6 +19,8 @@ import { api } from '../lib/api.js';
 import { mapsLink } from '../lib/format.js';
 import { findNearestBoardingPoint } from '../lib/nearestStop.js';
 import { recommendTrip } from '../lib/recommendTrip.js';
+import FromAirportPlanner from './FromAirportPlanner.jsx';
+import PlannerDirectionSwitch from './PlannerDirectionSwitch.jsx';
 import Recommendation from './Recommendation.jsx';
 
 const inputShell =
@@ -55,6 +57,8 @@ const currentMinute = () => {
 };
 
 export default function Planner({ service, backendReady }) {
+	const [tripDirection, setTripDirection] = useState('to-airport');
+	const flightDateInputRef = useRef(null);
 	const autoLocateAttempted = useRef(false);
 	const [coordinates, setCoordinates] = useState(null);
 	const [nearestMatch, setNearestMatch] = useState(null);
@@ -93,6 +97,21 @@ export default function Planner({ service, backendReady }) {
 
 		setFlightDeparture(next);
 		setError('');
+	};
+
+	const openFlightDatePicker = () => {
+		const input = flightDateInputRef.current;
+		if (!input) return;
+		try {
+			if (typeof input.showPicker === 'function') input.showPicker();
+			else {
+				input.focus();
+				input.click();
+			}
+		} catch {
+			input.focus();
+			input.click();
+		}
 	};
 
 	const locate = useCallback(
@@ -318,6 +337,15 @@ export default function Planner({ service, backendReady }) {
 		}
 	};
 
+	if (tripDirection === 'from-airport')
+		return (
+			<FromAirportPlanner
+				service={service}
+				backendReady={backendReady}
+				onDirectionChange={setTripDirection}
+			/>
+		);
+
 	return (
 		<section
 			id="planner"
@@ -353,12 +381,16 @@ export default function Planner({ service, backendReady }) {
 				className="adaptive-material relative z-10 rounded-3xl border border-white bg-white/90 p-6 shadow-[0_22px_60px_rgba(20,43,56,.11),0_2px_8px_rgba(20,43,56,.05)] backdrop-blur-xl transition-colors duration-300 dark:border-white/10 dark:bg-slate-900/88 dark:shadow-[0_24px_70px_rgba(0,0,0,.35)] max-lg:mx-auto max-lg:w-full max-lg:max-w-xl max-md:p-4"
 				onSubmit={submit}
 			>
-				<div className="mb-6 flex items-center justify-between">
+				<PlannerDirectionSwitch
+					value="to-airport"
+					onChange={setTripDirection}
+				/>
+				<div className="mt-6 mb-6 flex items-center justify-between">
 					<div className="flex items-center gap-3">
 						<span className="flex size-7 items-center justify-center rounded-full bg-brand-soft text-xs font-extrabold text-brand">
 							1
 						</span>
-						<h2 className="text-lg font-bold tracking-tight">Plan to Vizag</h2>
+						<h2 className="text-lg font-bold tracking-tight">Plan to Vizag Airport</h2>
 					</div>
 					<span className="text-[.68rem] font-semibold text-slate-400">
 						No login needed
@@ -511,32 +543,36 @@ export default function Planner({ service, backendReady }) {
 					When does your flight depart?
 				</label>
 				<div className="grid grid-cols-[.92fr_1.08fr] overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 transition-[border-color,box-shadow,background-color] duration-200 focus-within:border-brand/60 focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(11,141,133,.1)] dark:border-white/10 dark:bg-white/5 dark:focus-within:bg-white/8 max-md:grid-cols-1">
-					<label
-						className="group grid min-h-18 content-center px-4 py-3 transition-colors focus-within:bg-white/70 dark:focus-within:bg-white/5"
-						htmlFor="flight-date"
-					>
+					<div className="group relative grid min-h-18 content-center px-4 py-3 transition-colors focus-within:bg-white/70 dark:focus-within:bg-white/5">
 						<span className="text-[.62rem] font-bold tracking-wide text-muted">
 							Travel date
 						</span>
-						<div className="relative mt-1 flex min-h-7 items-center gap-2 text-[.95rem] font-bold tracking-[-.01em] text-ink">
+						<button
+							type="button"
+							className="relative z-10 mt-1 flex min-h-7 items-center gap-2 text-left text-[.95rem] font-bold tracking-[-.01em] text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand/45"
+							aria-label={`Choose travel date. Selected date ${displayDateValue(flightDeparture.date)}`}
+							onClick={openFlightDatePicker}
+						>
 							<CalendarDays
 								size={17}
 								className="shrink-0 text-slate-400"
 								aria-hidden="true"
 							/>
-							<span aria-hidden="true">{displayDateValue(flightDeparture.date)}</span>
-							<input
-								id="flight-date"
-								className="absolute inset-0 size-full cursor-pointer opacity-0"
-								type="date"
-								aria-label="Flight travel date"
-								min={localDateValue(new Date())}
-								value={flightDeparture.date}
-								onChange={(event) => changeDeparture('date', event.target.value)}
-								required
-							/>
-						</div>
-					</label>
+							<span>{displayDateValue(flightDeparture.date)}</span>
+						</button>
+						<input
+							ref={flightDateInputRef}
+							id="flight-date"
+							className="pointer-events-none absolute inset-0 size-full opacity-0"
+							type="date"
+							tabIndex={-1}
+							aria-label="Flight travel date"
+							min={localDateValue(new Date())}
+							value={flightDeparture.date}
+							onChange={(event) => changeDeparture('date', event.target.value)}
+							required
+						/>
+					</div>
 					<fieldset className="grid min-h-18 content-center border-l border-slate-200 px-4 py-3 transition-colors focus-within:bg-white/70 dark:border-white/10 dark:focus-within:bg-white/5 max-md:border-l-0 max-md:border-t">
 						<legend className="sr-only">Departure time</legend>
 						<span className="text-[.62rem] font-bold tracking-wide text-muted">

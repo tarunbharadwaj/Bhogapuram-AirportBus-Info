@@ -3,17 +3,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { trackEvent } from '../lib/analytics.js';
 import { formatTime } from '../lib/format.js';
 import { getDirectionalTimes } from '../../../shared/serviceRouting.mjs';
+import { indiaDateTime, indiaDateValue } from '../../../shared/airportDepartures.mjs';
 
 const buildTimetable = (service, routeId, stopId, direction) => {
 	const route = service.routes.find((item) => item.id === routeId) || service.routes[0];
 	const stop = route.stops.find((item) => item.id === stopId) || route.stops[0];
 	const now = new Date();
+	const serviceDate = indiaDateValue(now);
 	const services = [0, 1].flatMap((dayOffset) =>
 		getDirectionalTimes(route, direction).map((time) => {
-			const [hours, minutes] = time.split(':').map(Number);
-			const departure = new Date(now);
-			departure.setDate(departure.getDate() + dayOffset);
-			departure.setHours(hours, minutes, 0, 0);
+			const departure = indiaDateTime(serviceDate, time, dayOffset);
 			if (direction === 'to-airport')
 				departure.setMinutes(departure.getMinutes() + stop.offset);
 			const arrival = new Date(
@@ -27,11 +26,6 @@ const buildTimetable = (service, routeId, stopId, direction) => {
 	);
 	return { route, stop, direction, services, verifiedDate: service.status.verifiedDate };
 };
-
-const isSameLocalDate = (left, right) =>
-	left.getFullYear() === right.getFullYear() &&
-	left.getMonth() === right.getMonth() &&
-	left.getDate() === right.getDate();
 
 export default function Timetable({ service }) {
 	const sectionRef = useRef(null);
@@ -73,7 +67,8 @@ export default function Timetable({ service }) {
 		.filter((item) => new Date(item.departure).getTime() >= now.getTime())
 		.slice(0, 5);
 	const nextBusIsTomorrow = Boolean(
-		visible[0] && !isSameLocalDate(new Date(visible[0].departure), now)
+		visible[0] &&
+			indiaDateValue(visible[0].departure) !== indiaDateValue(now)
 	);
 	const toggle = (active) =>
 		`h-10 rounded-lg text-xs font-bold transition ${active ? 'bg-white text-ink shadow-sm dark:bg-white/12' : 'text-muted'}`;
