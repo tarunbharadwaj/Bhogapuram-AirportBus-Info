@@ -5,7 +5,9 @@ import ThemeToggle from './ThemeToggle.jsx';
 
 export default function Header() {
 	const [open, setOpen] = useState(false);
-	const navigate = (id) => {
+	const navigate = (event, id) => {
+		if (window.location.pathname !== '/') return;
+		event.preventDefault();
 		document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 		setOpen(false);
 	};
@@ -24,15 +26,17 @@ export default function Header() {
 				</button>
 			</div>
 			<nav className={navClass} aria-label="Main navigation">
-				{['Plan a trip', 'Timetables', 'Routes & stops'].map((label, index) => (
-					<button
+				{['Plan a trip', 'Timetables', 'Routes & stops'].map((label, index) => {
+					const id = ['planner', 'timetables', 'routes'][index];
+					return <a
 						key={label}
 						className="rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white dark:hover:bg-white/8 max-md:text-left"
-						onClick={() => navigate(['planner', 'timetables', 'routes'][index])}
+						href={`/#${id}`}
+						onClick={(event) => navigate(event, id)}
 					>
 						{label}
-					</button>
-				))}
+					</a>;
+				})}
 				<a
 					className="rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white dark:hover:bg-white/8 max-md:text-left"
 					href="/feedback"

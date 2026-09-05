@@ -3,6 +3,7 @@ import { api } from './lib/api.js';
 import AdminPage from './pages/AdminPage.jsx';
 import FeedbackPage from './pages/FeedbackPage.jsx';
 import HomePage from './pages/HomePage.jsx';
+import SeoLandingPage, { SEO_PATHS } from './pages/SeoLandingPage.jsx';
 import { LoadingScreen } from './components/SiteSections.jsx';
 import { FALLBACK_SERVICE } from './data/fallbackService.js';
 
@@ -10,6 +11,7 @@ const SERVICE_CACHE_KEY = 'bhogapuram-service-cache-v2';
 const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
 const isAdminPage = currentPath === '/service-admin';
 const isFeedbackPage = currentPath === '/feedback';
+const isSeoPage = SEO_PATHS.includes(currentPath);
 
 const isServiceData = (value) =>
 	Boolean(
@@ -38,7 +40,7 @@ export default function App() {
 	const [backendReady, setBackendReady] = useState(false);
 	const [error, setError] = useState('');
 	useEffect(() => {
-		if (isFeedbackPage) return undefined;
+		if (isFeedbackPage || isSeoPage) return undefined;
 
 		let cancelled = false;
 		const retryDelays = [0, 3000, 7000, 15000, 30000];
@@ -79,6 +81,8 @@ export default function App() {
 		};
 	}, []);
 	if (isFeedbackPage) return <FeedbackPage />;
+	if (isSeoPage)
+		return <SeoLandingPage pathname={currentPath} service={service || FALLBACK_SERVICE} />;
 	if (error) return <LoadingScreen error={error} />;
 	if (!service) return <LoadingScreen />;
 	return isAdminPage ? (
