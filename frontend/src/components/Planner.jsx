@@ -8,18 +8,26 @@ import {
 	ExternalLink,
 	LocateFixed,
 	LockKeyhole,
+	ListFilter,
 	MapPin,
 	Settings2,
 	ShieldCheck,
 	Sparkles
 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+	indiaDateTimeParts,
+	indiaDateValue,
+	indiaIsoFromParts
+} from '../../../shared/airportDepartures.mjs';
+import { getActiveBoardingPlaces } from '../../../shared/serviceRouting.mjs';
 import { trackEvent } from '../lib/analytics.js';
 import { api } from '../lib/api.js';
 import { mapsLink } from '../lib/format.js';
 import { findNearestBoardingPoint } from '../lib/nearestStop.js';
 import { recommendTrip } from '../lib/recommendTrip.js';
 import FromAirportPlanner from './FromAirportPlanner.jsx';
+import BoardingStopPicker from './BoardingStopPicker.jsx';
 import PlannerDirectionSwitch from './PlannerDirectionSwitch.jsx';
 import Recommendation from './Recommendation.jsx';
 
@@ -28,27 +36,22 @@ const inputShell =
 const fieldLabel =
 	'mb-2 mt-4 block text-xs font-bold text-slate-600 dark:text-slate-300';
 
-const localDateValue = (date) =>
-	`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-
 const displayDateValue = (value) => {
 	const [year, month, day] = value.split('-');
 	return year && month && day ? `${day}-${month}-${year}` : 'DD-MM-YYYY';
 };
 
-const departurePartsFrom = (date) => ({
-	date: localDateValue(date),
-	hour: String(date.getHours() % 12 || 12),
-	minute: String(date.getMinutes()).padStart(2, '0'),
-	period: date.getHours() >= 12 ? 'PM' : 'AM'
-});
-
-const departureDateFrom = ({ date, hour, minute, period }) => {
-	const hour24 = (Number(hour) % 12) + (period === 'PM' ? 12 : 0);
-	const departure = new Date(`${date}T00:00:00`);
-	departure.setHours(hour24, Number(minute), 0, 0);
-	return departure;
+const departurePartsFrom = (date) => {
+	const parts = indiaDateTimeParts(date);
+	return {
+		date: parts.date,
+		hour: String(parts.hour % 12 || 12),
+		minute: String(parts.minute).padStart(2, '0'),
+		period: parts.hour >= 12 ? 'PM' : 'AM'
+	};
 };
+
+const departureDateFrom = (parts) => new Date(indiaIsoFromParts(parts));
 
 const currentMinute = () => {
 	const now = new Date();
@@ -60,7 +63,9 @@ export default function Planner({ service, backendReady }) {
 	const [tripDirection, setTripDirection] = useState('to-airport');
 	const flightDateInputRef = useRef(null);
 	const autoLocateAttempted = useRef(false);
+	const [startMode, setStartMode] = useState('');
 	const [coordinates, setCoordinates] = useState(null);
+	const [boardingPlaceId, setBoardingPlaceId] = useState('');
 	const [nearestMatch, setNearestMatch] = useState(null);
 	const [outsideServiceAreaOverride, setOutsideServiceAreaOverride] =
 		useState(false);
@@ -71,6 +76,10 @@ export default function Planner({ service, backendReady }) {
 	const [nearestMessage, setNearestMessage] = useState('');
 	const [loading, setLoading] = useState(false);
 	const [result, setResult] = useState(null);
+	const boardingPlaces = useMemo(
+		() => getActiveBoardingPlaces(service),
+		[service]
+	);
 	const [error, setError] = useState('');
 	const [flightDeparture, setFlightDeparture] = useState(() => {
 		const date = new Date(Date.now() + 30 * 60 * 60 * 1000);
@@ -81,7 +90,7 @@ export default function Planner({ service, backendReady }) {
 
 	const changeDeparture = (part, value) => {
 		let next = { ...flightDeparture, [part]: value };
-		if (part === 'date' && value === localDateValue(new Date())) {
+		if (part === 'date' && value === indiaDateValue()) {
 			const selectedTime = departureDateFrom(next);
 			if (selectedTime < currentMinute()) {
 				const soonest = new Date(Date.now() + 60_000);
@@ -116,6 +125,7 @@ export default function Planner({ service, backendReady }) {
 
 	const locate = useCallback(
 		async (requestSource = 'user') => {
+			autoLocateAttempted.current = true;
 			trackEvent('location_requested', { request_source: requestSource });
 			if (!navigator.geolocation) {
 				trackEvent('location_permission_result', {
@@ -133,6 +143,7 @@ export default function Planner({ service, backendReady }) {
 						name: 'geolocation'
 					});
 					if (permission.state === 'denied') {
+						autoLocateAttempted.current = false;
 						trackEvent('location_permission_result', {
 							permission_result: 'denied',
 							request_source: requestSource
@@ -199,6 +210,7 @@ export default function Planner({ service, backendReady }) {
 				},
 				(locationError) => {
 					if (locationError.code === 1) {
+						autoLocateAttempted.current = false;
 						trackEvent('location_permission_result', {
 							permission_result: 'denied',
 							request_source: requestSource
@@ -230,6 +242,7 @@ export default function Planner({ service, backendReady }) {
 
 	useEffect(() => {
 		if (
+			startMode !== 'location' ||
 			autoLocateAttempted.current ||
 			!navigator.geolocation ||
 			!navigator.permissions?.query
@@ -264,7 +277,28 @@ export default function Planner({ service, backendReady }) {
 			cancelled = true;
 			permissionStatus?.removeEventListener?.('change', syncPermission);
 		};
-	}, [locate]);
+	}, [locate, startMode]);
+
+	const chooseStartMode = (mode) => {
+		setStartMode(mode);
+		setResult(null);
+		setError('');
+		setOutsideServiceAreaOverride(false);
+		trackEvent('boarding_input_mode_selected', { input_mode: mode });
+		if (mode === 'location' && !coordinates && !locating) locate('user');
+	};
+
+	const chooseBoardingPlace = (placeId) => {
+		setBoardingPlaceId(placeId);
+		setResult(null);
+		setError('');
+		const place = boardingPlaces.find((item) => item.placeId === placeId);
+		trackEvent('manual_boarding_stop_selected', {
+			input_mode: 'manual-stop',
+			stop_id: placeId,
+			route_code: place?.routeCodes.join('/') || 'unknown'
+		});
+	};
 
 	const confirmOutsideServiceArea = () => {
 		if (!nearestMatch?.outsideServiceArea) return;
@@ -279,11 +313,19 @@ export default function Planner({ service, backendReady }) {
 
 	const submit = async (event) => {
 		event.preventDefault();
-		if (!coordinates) {
-			setError('Use your location before finding an airport bus.');
+		if (!startMode) {
+			setError('Choose how you want to select your boarding stop.');
 			return;
 		}
-		if (outsideServiceArea && !outsideServiceAreaOverride) {
+		if (startMode === 'location' && !coordinates) {
+			setError('Use your current location before finding an airport bus.');
+			return;
+		}
+		if (startMode === 'manual-stop' && !boardingPlaceId) {
+			setError('Choose an AeroExpress boarding stop.');
+			return;
+		}
+		if (startMode === 'location' && outsideServiceArea && !outsideServiceAreaOverride) {
 			setError('Confirm that you can reach the nearest supported stop first.');
 			return;
 		}
@@ -297,10 +339,13 @@ export default function Planner({ service, backendReady }) {
 		setResult(null);
 		try {
 			const request = {
-				coordinates,
 				flightTime: selectedDeparture.toISOString(),
 				flightType,
-				allowOutsideServiceArea: outsideServiceAreaOverride
+				allowOutsideServiceArea:
+					startMode === 'location' && outsideServiceAreaOverride,
+				...(startMode === 'location'
+					? { coordinates }
+					: { boardingPlaceId })
 			};
 			const recommendation = recommendTrip(service, request);
 			setResult(recommendation);
@@ -397,9 +442,29 @@ export default function Planner({ service, backendReady }) {
 					</span>
 				</div>
 				<label className={fieldLabel}>Where are you starting from?</label>
+				<div className="grid grid-cols-2 gap-2" role="group" aria-label="Choose boarding stop input method">
+					<button
+						type="button"
+						aria-pressed={startMode === 'location'}
+						onClick={() => chooseStartMode('location')}
+						className={`flex min-h-14 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-bold transition-[transform,background-color,border-color,color,box-shadow] active:scale-[.98] ${startMode === 'location' ? 'border-brand/35 bg-brand text-white shadow-sm' : 'border-slate-200 bg-slate-50 text-muted hover:border-brand/30 hover:text-ink dark:border-white/10 dark:bg-white/5'}`}
+					>
+						<LocateFixed size={17} /> Use my location
+					</button>
+					<button
+						type="button"
+						aria-pressed={startMode === 'manual-stop'}
+						onClick={() => chooseStartMode('manual-stop')}
+						className={`flex min-h-14 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-bold transition-[transform,background-color,border-color,color,box-shadow] active:scale-[.98] ${startMode === 'manual-stop' ? 'border-brand/35 bg-brand text-white shadow-sm' : 'border-slate-200 bg-slate-50 text-muted hover:border-brand/30 hover:text-ink dark:border-white/10 dark:bg-white/5'}`}
+					>
+						<ListFilter size={17} /> Choose a bus stop
+					</button>
+				</div>
+				{startMode === 'location' && (
+				<>
 				<button
 					type="button"
-					className={`flex min-h-18 w-full items-center gap-4 rounded-2xl border px-4 text-left transition-[transform,background-color,border-color] active:scale-[.99] disabled:cursor-wait ${coordinates ? (outsideServiceArea ? 'border-amber-300/70 bg-amber-50 dark:border-amber-300/20 dark:bg-amber-300/8' : 'border-brand/30 bg-brand-soft') : 'border-slate-200 bg-slate-50 hover:border-brand/30 hover:bg-brand-soft dark:border-white/10 dark:bg-white/5'}`}
+					className={`mt-3 flex min-h-18 w-full items-center gap-4 rounded-2xl border px-4 text-left transition-[transform,background-color,border-color] active:scale-[.99] disabled:cursor-wait ${coordinates ? (outsideServiceArea ? 'border-amber-300/70 bg-amber-50 dark:border-amber-300/20 dark:bg-amber-300/8' : 'border-brand/30 bg-brand-soft') : 'border-slate-200 bg-slate-50 hover:border-brand/30 hover:bg-brand-soft dark:border-white/10 dark:bg-white/5'}`}
 					onClick={() => locate('user')}
 					disabled={locating}
 				>
@@ -539,6 +604,15 @@ export default function Planner({ service, backendReady }) {
 						</div>
 					</div>
 				)}
+				</>
+				)}
+				{startMode === 'manual-stop' && (
+					<BoardingStopPicker
+						places={boardingPlaces}
+						value={boardingPlaceId}
+						onChange={chooseBoardingPlace}
+					/>
+				)}
 				<label className={fieldLabel} htmlFor="flight-date">
 					When does your flight depart?
 				</label>
@@ -567,7 +641,7 @@ export default function Planner({ service, backendReady }) {
 							type="date"
 							tabIndex={-1}
 							aria-label="Flight travel date"
-							min={localDateValue(new Date())}
+							min={indiaDateValue()}
 							value={flightDeparture.date}
 							onChange={(event) => changeDeparture('date', event.target.value)}
 							required
@@ -660,18 +734,30 @@ export default function Planner({ service, backendReady }) {
 					className="mt-5 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-[#0b8d85] to-[#08756f] text-sm font-bold text-white shadow-lg shadow-brand/15 transition active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-45"
 					disabled={
 						loading ||
-						!coordinates ||
-						(outsideServiceArea && !outsideServiceAreaOverride)
+						!startMode ||
+						(startMode === 'location' && !coordinates) ||
+						(startMode === 'manual-stop' && !boardingPlaceId) ||
+						(startMode === 'location' &&
+							outsideServiceArea &&
+							!outsideServiceAreaOverride)
 					}
 				>
 					{loading ? 'Finding your bus…' : 'Find my airport bus'}{' '}
 					<ArrowRight size={18} />
 				</button>
-				<p className="mt-2 flex items-center justify-center gap-1 text-[.62rem] text-slate-400">
-					<LockKeyhole size={12} /> Your location stays in this planning session.
+				<p className="mt-2 flex items-center justify-center gap-1 text-center text-[.62rem] text-slate-400">
+					<LockKeyhole size={12} />{' '}
+					{startMode === 'manual-stop'
+						? 'Manual stop planning does not request your location.'
+						: 'Your location stays in this planning session.'}
 				</p>
 			</form>
-			{result && <Recommendation result={result} />}
+			{result && (
+				<Recommendation
+					result={result}
+					directionsOrigin={startMode === 'location' ? coordinates : null}
+				/>
+			)}
 		</section>
 	);
 }

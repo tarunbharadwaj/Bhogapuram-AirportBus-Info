@@ -1,6 +1,6 @@
 # Vizag Airport Bus MVP
 
-A mobile-first React and Node.js website that recommends an AeroExpress bus based on a traveller's location and flight departure time.
+A mobile-first React and Node.js website that recommends an AeroExpress bus based on a traveller's selected stop or current location and flight departure time.
 
 ## Project structure
 
@@ -56,6 +56,14 @@ npm start
 ```
 
 Admin changes are saved to `backend/data/service-data.json`. The editor supports public announcements, verification dates, route availability, first/last bus times, frequency, and fares.
+
+On Render's free service, this file is stored on an ephemeral filesystem. Admin edits can disappear after a restart or redeploy, so they must not be treated as permanent production data.
+
+## Service and ticketing data
+
+Canonical route and ticketing information lives in `shared/serviceData.mjs`. The current ticketing status records that AeroExpress tickets are not sold online and must be purchased from the conductor onboard. To change a ticketing status, message, URL, or `checkedDate`, edit the source-controlled `DEFAULT_TICKETING` object, commit the change, and redeploy both applications.
+
+The public planner supports either browser location or a manually selected active bus stop. Intermediate stop times are estimates marked with `~`; route-origin departures remain published times. The timetable defaults to the next five services and includes a full-daily-schedule view for planning ahead.
 
 ## Production
 

@@ -9,3 +9,20 @@ export const formatDuration = (minutes) => {
   return hours ? `${hours} hr${rest ? ` ${rest} min` : ''}` : `${rest} min`;
 };
 export const mapsLink = (lat, lng) => `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+
+export const formatRoundedTime = (value, mode = 'nearest') => {
+	const interval = 5 * 60_000;
+	const timestamp = new Date(value).getTime();
+	const round = mode === 'floor' ? Math.floor : Math.round;
+	return formatTime(new Date(round(timestamp / interval) * interval));
+};
+
+export const directionsLink = ({ destination, origin }) => {
+	const params = new URLSearchParams({
+		api: '1',
+		destination: `${destination.lat},${destination.lng}`,
+		travelmode: 'driving'
+	});
+	if (origin) params.set('origin', `${origin.lat},${origin.lng}`);
+	return `https://www.google.com/maps/dir/?${params.toString()}`;
+};

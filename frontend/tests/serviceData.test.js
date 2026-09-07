@@ -1,9 +1,24 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DEFAULT_SERVICE_DATA } from '../../shared/serviceData.mjs';
-import { getDirectionalTimes } from '../../shared/serviceRouting.mjs';
+import {
+	findBoardingPlaceById,
+	getActiveBoardingPlaces,
+	getDirectionalTimes
+} from '../../shared/serviceRouting.mjs';
+import {
+	addDaysToDateValue,
+	indiaDateTime,
+	indiaDateValue
+} from '../../shared/airportDepartures.mjs';
 import { FALLBACK_SERVICE } from '../src/data/fallbackService.js';
+import { directionsLink } from '../src/lib/format.js';
 import { findNearestBoardingPoint } from '../src/lib/nearestStop.js';
+import { recommendTrip } from '../src/lib/recommendTrip.js';
+import {
+	buildTimetable,
+	getVisibleTimetableServices
+} from '../src/lib/timetable.js';
 
 const route = (code) =>
 	DEFAULT_SERVICE_DATA.routes.find((item) => item.code === code);
@@ -45,13 +60,13 @@ test('contains the revised stops and fares', () => {
 		route('ASR-2').stops.map(({ name, fare }) => [name, fare]),
 		[
 			['Old Gajuwaka', 400], ['Scindia', 400], ['Kancharapalem', 400],
-			['Siripuram', 350], ['ISKCON Temple', 300], ['IT Hills', 250],
+			['Railway Station', 300], ['RTC Complex', 350], ['Siripuram', 350],
+			['Opposite VUDA Park', 300], ['ISKCON Temple', 300], ['IT Hills', 250],
 			['Marikavalasa', 200], ['Anandapuram', 150],
 			['Tagarapuvalasa', 100], ['Airport Junction', 50]
 		]
 	);
 	assert.equal(route('ASR-1').stops.some((stop) => stop.name === 'Madhurawada'), false);
-	assert.equal(route('ASR-2').stops.some((stop) => stop.name === 'Railway Station'), false);
 });
 
 test('keeps published origin times exact and marks intermediate pins and times', () => {
@@ -94,7 +109,10 @@ test('keeps published origin times exact and marks intermediate pins and times',
 		route('ASR-2').stops.map((stop) => [stop.id, [stop.lat, stop.lng]])
 	);
 	assert.deepEqual(asr2Coordinates['kancharapalem-stop'], [17.7322554, 83.2778582]);
+	assert.deepEqual(asr2Coordinates['railway-stop'], [17.722783, 83.290794]);
+	assert.deepEqual(asr2Coordinates['rtc-complex-stop'], [17.723881, 83.305552]);
 	assert.deepEqual(asr2Coordinates['siripuram-stop'], [17.7209182, 83.3218202]);
+	assert.deepEqual(asr2Coordinates['vuda-park-stop'], [17.723734, 83.337496]);
 	assert.deepEqual(asr2Coordinates['iskcon-temple-stop'], [17.7677556, 83.3666993]);
 	assert.deepEqual(asr2Coordinates['it-hills-stop'], [17.8103056, 83.3893056]);
 });
@@ -111,4 +129,152 @@ test('groups both routes at a shared physical stop', () => {
 
 test('uses the same canonical data for the frontend fallback', () => {
 	assert.deepEqual(FALLBACK_SERVICE, DEFAULT_SERVICE_DATA);
+});
+
+test('groups active manual boarding places and excludes disabled routes', () => {
+	const places = getActiveBoardingPlaces(DEFAULT_SERVICE_DATA);
+	const railwayStation = places.find(
+		(place) => place.placeId === 'railway-station'
+	);
+	assert.deepEqual(railwayStation.routeCodes, ['ASR-2']);
+	assert.deepEqual(
+		{ lat: railwayStation.lat, lng: railwayStation.lng },
+		{ lat: 17.722783, lng: 83.290794 }
+	);
+	assert.equal(places.filter((place) => place.placeId === 'marikavalasa').length, 1);
+	assert.deepEqual(
+		places.find((place) => place.placeId === 'marikavalasa').routeCodes,
+		['ASR-1', 'ASR-2']
+	);
+	const draft = structuredClone(DEFAULT_SERVICE_DATA);
+	draft.routes.find((item) => item.code === 'ASR-2').enabled = false;
+	assert.deepEqual(
+		findBoardingPlaceById(draft, 'marikavalasa').routeCodes,
+		['ASR-1']
+	);
+	assert.equal(findBoardingPlaceById(draft, 'it-hills'), undefined);
+});
+
+test('selects Railway Station as an active ASR-2 boarding point', () => {
+	const nearest = findNearestBoardingPoint(DEFAULT_SERVICE_DATA, {
+		lat: 17.722783,
+		lng: 83.290794
+	});
+	assert.equal(nearest.placeId, 'railway-station');
+	assert.equal(nearest.stop.id, 'railway-stop');
+	assert.deepEqual(nearest.routeCodes, ['ASR-2']);
+	assert.equal(nearest.stop.fare, 300);
+});
+
+test('selects RTC Complex as an active ASR-2 boarding point', () => {
+	const nearest = findNearestBoardingPoint(DEFAULT_SERVICE_DATA, {
+		lat: 17.723881,
+		lng: 83.305552
+	});
+	assert.equal(nearest.placeId, 'rtc-complex');
+	assert.equal(nearest.stop.id, 'rtc-complex-stop');
+	assert.deepEqual(nearest.routeCodes, ['ASR-2']);
+	assert.equal(nearest.stop.fare, 350);
+});
+
+test('selects Opposite VUDA Park as an active ASR-2 boarding point', () => {
+	const nearest = findNearestBoardingPoint(DEFAULT_SERVICE_DATA, {
+		lat: 17.723734,
+		lng: 83.337496
+	});
+	assert.equal(nearest.placeId, 'vuda-park');
+	assert.equal(nearest.stop.id, 'vuda-park-stop');
+	assert.deepEqual(nearest.routeCodes, ['ASR-2']);
+	assert.equal(nearest.stop.fare, 300);
+});
+
+test('plans directly from a manually selected stop without location coverage checks', () => {
+	const tomorrow = addDaysToDateValue(indiaDateValue(), 1);
+	const result = recommendTrip(DEFAULT_SERVICE_DATA, {
+		boardingPlaceId: 'it-hills',
+		flightTime: indiaDateTime(tomorrow, '23:59').toISOString(),
+		flightType: 'domestic'
+	});
+	assert.equal(result.boardingSelection.mode, 'manual-stop');
+	assert.equal(result.boardingSelection.placeId, 'it-hills');
+	assert.equal(result.nearestStop.distanceKm, 0);
+	assert.equal(result.outsideServiceArea, false);
+	assert.equal(result.best.stopId, 'it-hills-stop');
+	assert.equal(result.best.stopTimeQuality, 'estimated');
+	assert.ok(
+		new Date(result.best.arriveAtStopBy) < new Date(result.best.departureTime)
+	);
+});
+
+test('requires exactly one valid boarding source', () => {
+	const tomorrow = addDaysToDateValue(indiaDateValue(), 1);
+	const input = {
+		flightTime: indiaDateTime(tomorrow, '23:59').toISOString(),
+		flightType: 'domestic'
+	};
+	assert.throws(() => recommendTrip(DEFAULT_SERVICE_DATA, input), /either your current location/i);
+	assert.throws(
+		() => recommendTrip(DEFAULT_SERVICE_DATA, {
+			...input,
+			boardingPlaceId: 'not-an-active-stop'
+		}),
+		/active AeroExpress boarding stop/i
+	);
+	assert.throws(
+		() => recommendTrip(DEFAULT_SERVICE_DATA, {
+			...input,
+			boardingPlaceId: 'it-hills',
+			coordinates: { lat: 17.8, lng: 83.3 }
+		}),
+		/either your current location/i
+	);
+});
+
+test('supports upcoming and complete daily timetable views', () => {
+	const now = new Date('2026-09-07T16:00:00+05:30');
+	const data = buildTimetable(
+		DEFAULT_SERVICE_DATA,
+		'asr-1',
+		'gajuwaka-stop',
+		'to-airport',
+		now
+	);
+	const upcoming = getVisibleTimetableServices(data, 'upcoming', now);
+	const fullDay = getVisibleTimetableServices(data, 'full-day', now);
+	assert.equal(upcoming.length, 5);
+	assert.equal(fullDay.length, route('ASR-1').timetables.toAirport.length);
+	assert.equal(fullDay[0].timeQuality, 'published');
+	assert.equal(
+		new Intl.DateTimeFormat('en-GB', {
+			timeZone: 'Asia/Kolkata',
+			hour: '2-digit',
+			minute: '2-digit',
+			hourCycle: 'h23'
+		}).format(new Date(fullDay[0].departure)),
+		'04:15'
+	);
+
+	const intermediate = buildTimetable(
+		DEFAULT_SERVICE_DATA,
+		'asr-1',
+		'nad-stop',
+		'to-airport',
+		now
+	);
+	assert.equal(intermediate.services[0].timeQuality, 'estimated');
+	assert.notEqual(
+		intermediate.services[0].departure,
+		intermediate.services[0].routeOriginDeparture
+	);
+});
+
+test('builds directions with a captured origin only when one is provided', () => {
+	const destination = { lat: 17.81, lng: 83.38 };
+	const manualUrl = new URL(directionsLink({ destination }));
+	assert.equal(manualUrl.searchParams.get('destination'), '17.81,83.38');
+	assert.equal(manualUrl.searchParams.has('origin'), false);
+	const locationUrl = new URL(
+		directionsLink({ destination, origin: { lat: 17.7, lng: 83.3 } })
+	);
+	assert.equal(locationUrl.searchParams.get('origin'), '17.7,83.3');
 });

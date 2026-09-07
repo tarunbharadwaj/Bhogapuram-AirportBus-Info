@@ -1,46 +1,39 @@
 import { BusFront, ChevronDown, CircleAlert, MapPin } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { indiaDateValue } from '../../../shared/airportDepartures.mjs';
 import { trackEvent } from '../lib/analytics.js';
-import { formatTime } from '../lib/format.js';
-import { getDirectionalTimes } from '../../../shared/serviceRouting.mjs';
-import { indiaDateTime, indiaDateValue } from '../../../shared/airportDepartures.mjs';
-
-const buildTimetable = (service, routeId, stopId, direction) => {
-	const route = service.routes.find((item) => item.id === routeId) || service.routes[0];
-	const stop = route.stops.find((item) => item.id === stopId) || route.stops[0];
-	const now = new Date();
-	const serviceDate = indiaDateValue(now);
-	const services = [0, 1].flatMap((dayOffset) =>
-		getDirectionalTimes(route, direction).map((time) => {
-			const departure = indiaDateTime(serviceDate, time, dayOffset);
-			if (direction === 'to-airport')
-				departure.setMinutes(departure.getMinutes() + stop.offset);
-			const arrival = new Date(
-				departure.getTime() + stop.journeyMinutes * 60_000
-			);
-			return {
-				departure: departure.toISOString(),
-				arrival: arrival.toISOString()
-			};
-		})
-	);
-	return { route, stop, direction, services, verifiedDate: service.status.verifiedDate };
-};
+import { formatRoundedTime, formatTime } from '../lib/format.js';
+import {
+	buildTimetable,
+	getVisibleTimetableServices
+} from '../lib/timetable.js';
 
 export default function Timetable({ service }) {
 	const sectionRef = useRef(null);
 	const [sectionVisible, setSectionVisible] = useState(false);
-	const [routeId, setRouteId] = useState('asr-1');
+	const activeRoutes = useMemo(
+		() => service.routes.filter((item) => item.enabled),
+		[service.routes]
+	);
+	const [routeId, setRouteId] = useState(activeRoutes[0]?.id || '');
 	const [direction, setDirection] = useState('to-airport');
+	const [viewMode, setViewMode] = useState('upcoming');
 	const route =
-		service.routes.find((item) => item.id === routeId) || service.routes[0];
-	const [stopId, setStopId] = useState(route.stops[0].id);
+		activeRoutes.find((item) => item.id === routeId) || activeRoutes[0];
+	const [stopId, setStopId] = useState(route?.stops[0]?.id || '');
+	const now = new Date();
 	const data = useMemo(
-		() => buildTimetable(service, routeId, stopId, direction),
+		() =>
+			route ? buildTimetable(service, routeId, stopId, direction, now) : null,
 		[service, routeId, stopId, direction]
 	);
 
 	useEffect(() => {
+		if (!activeRoutes.some((item) => item.id === routeId))
+			setRouteId(activeRoutes[0]?.id || '');
+	}, [activeRoutes, routeId]);
+	useEffect(() => {
+		if (!route) return;
 		if (!route.stops.some((stop) => stop.id === stopId))
 			setStopId(route.stops[0].id);
 	}, [route, stopId]);
@@ -55,23 +48,41 @@ export default function Timetable({ service }) {
 		return () => observer.disconnect();
 	}, []);
 	useEffect(() => {
-		if (!sectionVisible) return;
+		if (!sectionVisible || !data) return;
 		trackEvent('timetable_viewed', {
+			route_code: data.route.code,
+			stop_id: data.stop.id,
+			direction: data.direction,
+			schedule_view: viewMode
+		});
+	}, [data, sectionVisible, viewMode]);
+
+	const changeViewMode = (nextMode) => {
+		setViewMode(nextMode);
+		trackEvent('timetable_mode_changed', {
+			schedule_view: nextMode,
 			route_code: data.route.code,
 			stop_id: data.stop.id,
 			direction: data.direction
 		});
-	}, [data.direction, data.route.code, data.stop.id, sectionVisible]);
-	const now = new Date();
-	const visible = data.services
-		.filter((item) => new Date(item.departure).getTime() >= now.getTime())
-		.slice(0, 5);
+	};
+	const visible = data ? getVisibleTimetableServices(data, viewMode, now) : [];
 	const nextBusIsTomorrow = Boolean(
-		visible[0] &&
-			indiaDateValue(visible[0].departure) !== indiaDateValue(now)
+		visible[0] && indiaDateValue(visible[0].departure) !== indiaDateValue(now)
 	);
 	const toggle = (active) =>
-		`h-10 rounded-lg text-xs font-bold transition ${active ? 'bg-white text-ink shadow-sm dark:bg-white/12' : 'text-muted'}`;
+		`min-h-10 rounded-lg px-2 text-xs font-bold transition active:scale-[.98] ${active ? 'bg-white text-ink shadow-sm dark:bg-white/12' : 'text-muted'}`;
+	if (!route || !data)
+		return (
+			<section
+				className="mx-auto max-w-7xl px-6 pt-28 max-md:px-4 max-md:pt-20"
+				id="timetables"
+			>
+				<div className="rounded-3xl border border-white bg-white/70 p-8 text-center text-sm text-muted dark:border-white/10 dark:bg-white/5">
+					No active AeroExpress timetable is available right now.
+				</div>
+			</section>
+		);
 
 	return (
 		<section
@@ -84,20 +95,22 @@ export default function Timetable({ service }) {
 					<span className="text-xs font-extrabold uppercase tracking-[.12em] text-brand">
 						Daily schedule
 					</span>
-					<h2 className="mt-3 text-[clamp(2rem,4vw,3.15rem)] font-bold leading-none tracking-[-.045em]">
-						Know your next departure.
+					<h2 className="mt-3 text-[clamp(2rem,4vw,3.15rem)] leading-none font-bold tracking-[-.045em]">
+						Know every departure.
 					</h2>
 				</div>
 				<p className="max-w-md text-sm leading-relaxed text-muted max-md:mt-4">
-					Choose a route and stop to see the next five published departures.
+					See the next five buses or switch to the full daily schedule to plan ahead.
 				</p>
 			</div>
 			<div className="adaptive-material grid min-h-96 grid-cols-[18rem_1fr] overflow-hidden rounded-3xl border border-white bg-white/80 shadow-[0_18px_55px_rgba(22,44,58,.08)] backdrop-blur-xl transition-colors duration-300 dark:border-white/10 dark:bg-slate-900/85 dark:shadow-[0_20px_55px_rgba(0,0,0,.28)] max-md:grid-cols-1">
 				<div className="border-r border-slate-200 bg-slate-100 p-5 dark:border-white/10 dark:bg-white/4 max-md:border-r-0 max-md:border-b">
 					<div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-200 p-1 dark:bg-white/8">
-						{service.routes.map((item) => (
+						{activeRoutes.map((item) => (
 							<button
 								key={item.id}
+								type="button"
+								aria-pressed={routeId === item.id}
 								className={toggle(routeId === item.id)}
 								onClick={() => setRouteId(item.id)}
 							>
@@ -111,16 +124,42 @@ export default function Timetable({ service }) {
 					</div>
 					<div className="mt-3 grid grid-cols-2 gap-1 rounded-xl bg-slate-200 p-1 dark:bg-white/8">
 						<button
+							type="button"
+							aria-pressed={direction === 'to-airport'}
 							className={toggle(direction === 'to-airport')}
 							onClick={() => setDirection('to-airport')}
 						>
 							City → Airport
 						</button>
 						<button
+							type="button"
+							aria-pressed={direction === 'from-airport'}
 							className={toggle(direction === 'from-airport')}
 							onClick={() => setDirection('from-airport')}
 						>
 							Airport → City
+						</button>
+					</div>
+					<div
+						className="mt-3 grid grid-cols-2 gap-1 rounded-xl bg-slate-200 p-1 dark:bg-white/8"
+						role="group"
+						aria-label="Schedule view"
+					>
+						<button
+							type="button"
+							aria-pressed={viewMode === 'upcoming'}
+							className={toggle(viewMode === 'upcoming')}
+							onClick={() => changeViewMode('upcoming')}
+						>
+							Upcoming
+						</button>
+						<button
+							type="button"
+							aria-pressed={viewMode === 'full-day'}
+							className={toggle(viewMode === 'full-day')}
+							onClick={() => changeViewMode('full-day')}
+						>
+							Full daily schedule
 						</button>
 					</div>
 					<label className="mt-6 block text-xs font-bold text-muted">
@@ -149,36 +188,53 @@ export default function Timetable({ service }) {
 					<div className="grid grid-cols-2 pb-3 pl-12 text-[.68rem] font-bold text-slate-400">
 						<span>
 							{direction === 'to-airport'
-								? `From ${data?.stop.name || route.stops[0].name}`
+								? `At ${data.stop.name}`
 								: 'From Vizag Airport'}
 						</span>
 						<span className="text-right">
-							{direction === 'to-airport'
-								? 'Airport ETA'
-								: `Reach ${data?.stop.name || route.stops[0].name}`}
+							{direction === 'to-airport' ? 'Airport ETA' : `Reach ${data.stop.name}`}
 						</span>
 					</div>
-					{visible.map((item, index) => (
-						<div
-							key={`${item.departure}-${index}`}
-							className={`grid min-h-14 grid-cols-[2.2rem_auto_auto_1fr_auto] items-center gap-3 border-t border-slate-200 text-sm dark:border-white/10 ${index === 0 ? 'rounded-xl border border-brand/20 bg-brand-soft px-3' : ''}`}
-						>
-							<span className="flex size-8 items-center justify-center rounded-lg bg-brand-soft text-brand">
-								<BusFront size={17} />
-							</span>
-							<strong>{formatTime(item.departure)}</strong>
-							{index === 0 && (
-								<em className="whitespace-nowrap rounded-full bg-brand px-2 py-1 text-[.55rem] font-extrabold not-italic uppercase tracking-wider text-white">
-									{nextBusIsTomorrow ? 'Next bus · Tomorrow' : 'Next bus'}
-								</em>
-							)}
-							<span className="h-px bg-gradient-to-r from-slate-200 to-transparent dark:from-white/15" />
-							<span>{formatTime(item.arrival)}</span>
-						</div>
-					))}
-					<p className="mt-4 flex items-center gap-2 text-[.68rem] text-slate-400">
-						<CircleAlert size={14} /> Route-origin departures are published;
-						intermediate times are estimates. Please arrive 10 minutes early.
+					{visible.map((item, index) => {
+						const estimated = item.timeQuality === 'estimated';
+						return (
+							<div
+								key={`${item.departure}-${index}`}
+								className={`grid min-h-16 grid-cols-[2.2rem_auto_auto_1fr_auto] items-center gap-3 border-t border-slate-200 text-sm dark:border-white/10 max-sm:grid-cols-[2.2rem_1fr_auto] ${viewMode === 'upcoming' && index === 0 ? 'rounded-xl border border-brand/20 bg-brand-soft px-3' : ''}`}
+							>
+								<span className="flex size-8 items-center justify-center rounded-lg bg-brand-soft text-brand">
+									<BusFront size={17} />
+								</span>
+								<span className="grid gap-0.5">
+									<strong>
+										{estimated ? '~' : ''}
+										{estimated
+											? formatRoundedTime(item.departure)
+											: formatTime(item.departure)}
+									</strong>
+									{estimated && (
+										<small className="text-[.58rem] text-slate-400">
+											Origin {formatTime(item.routeOriginDeparture)}
+										</small>
+									)}
+								</span>
+								{viewMode === 'upcoming' && index === 0 && (
+									<em className="whitespace-nowrap rounded-full bg-brand px-2 py-1 text-[.55rem] font-extrabold not-italic uppercase tracking-wider text-white max-sm:col-start-3">
+										{nextBusIsTomorrow ? 'Next bus · Tomorrow' : 'Next bus'}
+									</em>
+								)}
+								<span className="h-px bg-gradient-to-r from-slate-200 to-transparent dark:from-white/15 max-sm:hidden" />
+								<span className="text-right">{formatTime(item.arrival)}</span>
+							</div>
+						);
+					})}
+					<p className="mt-4 flex items-start gap-2 text-[.68rem] leading-relaxed text-slate-400">
+						<CircleAlert size={14} className="mt-0.5 shrink-0" />
+						<span>
+							Route-origin departures are published; times prefixed with ~ are
+							estimates rounded to five minutes. Arrive 10-15 minutes early. Schedules
+							repeat daily and are subject to change.
+						</span>
 					</p>
 				</div>
 			</div>

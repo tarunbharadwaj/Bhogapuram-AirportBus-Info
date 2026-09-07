@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
 	DEFAULT_DATA,
+	DEFAULT_TICKETING,
 	SERVICE_DATA_SCHEMA_VERSION,
 	createDefaultServiceData
 } from '../data/defaultData.js';
@@ -59,6 +60,12 @@ export class ServiceModel {
 			next.airport.name = DEFAULT_DATA.airport.name;
 		if (typeof next.status.announcementVisible !== 'boolean')
 			next.status.announcementVisible = true;
+		next.ticketing = {
+			...clone(DEFAULT_TICKETING),
+			...(next.ticketing || {})
+		};
+		if (!['unverified', 'available', 'unavailable'].includes(next.ticketing.onlineBookingStatus))
+			next.ticketing.onlineBookingStatus = DEFAULT_TICKETING.onlineBookingStatus;
 		next.schemaVersion = SERVICE_DATA_SCHEMA_VERSION;
 
 		for (const route of next.routes) {

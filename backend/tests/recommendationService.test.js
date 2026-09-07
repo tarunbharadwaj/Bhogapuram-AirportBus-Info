@@ -9,6 +9,8 @@ import { ServiceModel } from '../src/models/serviceModel.js';
 import { nearestStop, recommendTrip } from '../src/services/recommendationService.js';
 import { findAirportDepartureOptions } from '../src/services/airportDepartureService.js';
 import { getAirportDepartureOptions } from '../../shared/airportDepartures.mjs';
+import { addDaysToDateValue, indiaDateTime, indiaDateValue } from '../../shared/airportDepartures.mjs';
+import { recommendTrip as recommendTripInBrowser } from '../../frontend/src/lib/recommendTrip.js';
 
 test('finds the closest boarding point', () => {
   const result = nearestStop(DEFAULT_DATA, { lat: 17.743, lng: 83.232 });
@@ -75,10 +77,11 @@ test('migrates legacy saved data while preserving public status settings', (cont
     routes: [],
   }));
   const model = new ServiceModel(dataFile);
-  assert.equal(model.getAll().schemaVersion, 2);
+  assert.equal(model.getAll().schemaVersion, 6);
   assert.equal(model.getAll().status.announcementVisible, false);
   assert.equal(model.getAll().status.announcement, 'Saved status');
   assert.equal(model.getAll().routes[0].timetables.toAirport[0], '04:15');
+  assert.equal(model.getAll().ticketing.onlineBookingStatus, 'unavailable');
 });
 
 test('serves the requested timetable direction through the API controller', () => {
@@ -128,4 +131,39 @@ test('serves airport departure options through the API controller', () => {
   assert.equal(responses[0].destination.placeId, 'nad-junction');
   assert.ok(responses[0].options.length > 0);
   assert.ok(responses[0].options.every((option) => option.routeCode === 'ASR-1'));
+});
+
+test('manual-stop recommendations match in frontend and backend', () => {
+  const tomorrow = addDaysToDateValue(indiaDateValue(), 1);
+  const input = {
+    boardingPlaceId: 'marikavalasa',
+    flightTime: indiaDateTime(tomorrow, '23:59').toISOString(),
+    flightType: 'domestic',
+  };
+  const backendResult = recommendTrip(DEFAULT_DATA, input);
+  const frontendResult = recommendTripInBrowser(DEFAULT_DATA, input);
+  assert.deepEqual(backendResult, frontendResult);
+  assert.equal(backendResult.boardingSelection.mode, 'manual-stop');
+  assert.deepEqual(backendResult.nearestStop.routeCodes, ['ASR-1', 'ASR-2']);
+  assert.equal(backendResult.nearestStop.distanceKm, 0);
+});
+
+test('rejects an inactive or ambiguous boarding source', () => {
+  const tomorrow = addDaysToDateValue(indiaDateValue(), 1);
+  const input = {
+    flightTime: indiaDateTime(tomorrow, '23:59').toISOString(),
+    flightType: 'domestic',
+  };
+  assert.throws(
+    () => recommendTrip(DEFAULT_DATA, { ...input, boardingPlaceId: 'not-an-active-stop' }),
+    /active AeroExpress boarding stop/i,
+  );
+  assert.throws(
+    () => recommendTrip(DEFAULT_DATA, {
+      ...input,
+      boardingPlaceId: 'old-gajuwaka',
+      coordinates: { lat: 17.68605, lng: 83.20421 },
+    }),
+    /either your current location/i,
+  );
 });

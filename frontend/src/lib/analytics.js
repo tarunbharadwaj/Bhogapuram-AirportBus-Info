@@ -16,7 +16,14 @@ const allowedEvents = new Set([
 	'boarding_map_opened',
 	'destination_map_opened',
 	'whatsapp_shared',
-	'feedback_submitted'
+	'feedback_submitted',
+	'boarding_input_mode_selected',
+	'manual_boarding_stop_selected',
+	'maps_directions_opened',
+	'timetable_mode_changed',
+	'ticketing_link_opened',
+	'live_tracking_opened',
+	'faq_opened'
 ]);
 
 const allowedParameters = new Set([
@@ -30,7 +37,11 @@ const allowedParameters = new Set([
 	'direction',
 	'option_count',
 	'map_type',
-	'feedback_type'
+	'feedback_type',
+	'input_mode',
+	'schedule_view',
+	'link_type',
+	'faq_id'
 ]);
 
 let initialized = false;

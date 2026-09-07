@@ -4,6 +4,7 @@ import {
 	Clock3,
 	ExternalLink,
 	Heart,
+	HelpCircle,
 	Map,
 	MessageSquareText,
 	Route,
@@ -11,13 +12,17 @@ import {
 	ShieldCheck
 } from 'lucide-react';
 import Brand from './Brand.jsx';
+import { trackEvent } from '../lib/analytics.js';
+import { DEFAULT_TICKETING } from '../../../shared/serviceData.mjs';
+
+const fallbackTicketing = DEFAULT_TICKETING;
 
 export function QuickFacts({ service }) {
 	const minFare = Math.min(
 		...service.routes.flatMap((route) => route.stops.map((stop) => stop.fare))
 	);
 	const facts = [
-		[Clock3, 'Service window', '4:30 AM – 10:30 PM'],
+		[Clock3, 'Service window', '4:30 AM - 10:30 PM'],
 		[Route, 'AeroExpress routes', 'ASR-1 & ASR-2'],
 		[BadgeIndianRupee, 'Reference fare', `From ₹${minFare}`]
 	];
@@ -46,7 +51,7 @@ export function Confidence() {
 		[
 			ShieldCheck,
 			'Plan with a safety margin',
-			'Recommendations include flight and traffic buffers.'
+			'Recommendations include a flight safety buffer.'
 		],
 		[
 			Map,
@@ -77,7 +82,90 @@ export function Confidence() {
 	);
 }
 
-export function Footer() {
+const faqItems = [
+	{
+		id: 'location-required',
+		question: 'Is location permission required?',
+		answer:
+			'No. Choose “Choose a bus stop” in the planner to plan from any active stop without sharing your location.'
+	},
+	{
+		id: 'estimated-stop-times',
+		question: 'How are intermediate stop times calculated?',
+		answer:
+			'Route-origin departures are published. Intermediate stop arrivals are estimates derived from route offsets, rounded to the nearest five minutes and marked with ~.'
+	},
+	{
+		id: 'punctuality',
+		question: 'Are AeroExpress buses guaranteed to run on time?',
+		answer:
+			'No. Traffic and operational conditions can change arrival times. Be at the stop 10-15 minutes early.'
+	},
+	{
+		id: 'ticket-availability',
+		question: 'Can I book an AeroExpress ticket online?',
+		answer:
+			'AeroExpress tickets cannot currently be purchased online. Board the bus and buy your ticket directly from the conductor.'
+	},
+	{
+		id: 'tomorrow-buses',
+		question: 'How can I see tomorrow’s early buses?',
+		answer:
+			'Use “Full daily schedule” in the timetable. It shows the complete first-to-last daily schedule, including services that have already departed today.'
+	}
+];
+
+export function FAQ({ ticketing = fallbackTicketing }) {
+	const info = { ...fallbackTicketing, ...ticketing };
+	return (
+		<section
+			className="mx-auto max-w-5xl px-6 pt-28 max-md:px-4 max-md:pt-20"
+			id="faq"
+			aria-labelledby="faq-title"
+		>
+			<div className="text-center">
+				<span className="text-xs font-extrabold uppercase tracking-[.12em] text-brand">
+					Helpful answers
+				</span>
+				<h2
+					className="mt-3 text-[clamp(2rem,4vw,3.15rem)] leading-none font-bold tracking-[-.045em]"
+					id="faq-title"
+				>
+					Before you travel.
+				</h2>
+			</div>
+			<div className="mt-8 space-y-2">
+				{faqItems.map((item) => (
+					<details
+						key={item.id}
+						className="group rounded-2xl border border-white bg-white/70 px-5 shadow-sm dark:border-white/10 dark:bg-white/5"
+						onToggle={(event) => {
+							if (event.currentTarget.open)
+								trackEvent('faq_opened', { faq_id: item.id });
+						}}
+					>
+						<summary className="flex min-h-15 cursor-pointer list-none items-center gap-3 py-4 text-sm font-bold marker:hidden">
+							<HelpCircle className="shrink-0 text-brand" size={18} />
+							<span className="flex-1">{item.question}</span>
+							<span
+								className="text-lg font-normal text-muted transition-transform group-open:rotate-45"
+								aria-hidden="true"
+							>
+								+
+							</span>
+						</summary>
+						<p className="border-t border-slate-200 py-4 pl-8 text-xs leading-6 text-muted dark:border-white/10">
+							{item.id === 'ticket-availability' ? info.message : item.answer}
+						</p>
+					</details>
+				))}
+			</div>
+		</section>
+	);
+}
+
+export function Footer({ ticketing = fallbackTicketing }) {
+	const info = { ...fallbackTicketing, ...ticketing };
 	return (
 		<footer className="mx-auto mb-8 grid max-w-[73rem] grid-cols-[1fr_auto] gap-8 border-t border-slate-200 py-8 dark:border-white/10 max-xl:mx-4 max-md:grid-cols-1">
 			<div className="flex items-center gap-3">
@@ -95,11 +183,11 @@ export function Footer() {
 				</a>
 				<a
 					className="flex items-center gap-1"
-					href="https://www.apsrtc.ap.gov.in/"
+					href={info.trackingUrl}
 					target="_blank"
 					rel="noreferrer"
 				>
-					APSRTC <ExternalLink size={12} />
+					Live tracking <ExternalLink size={12} />
 				</a>
 				<a
 					className="flex items-center gap-1"

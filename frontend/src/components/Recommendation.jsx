@@ -5,12 +5,19 @@ import {
 	Clock3,
 	Luggage,
 	MapPin,
+	Navigation,
 	Send
 } from 'lucide-react';
 import { trackEvent } from '../lib/analytics.js';
-import { formatDuration, formatTime, mapsLink } from '../lib/format.js';
+import {
+	directionsLink,
+	formatDuration,
+	formatRoundedTime,
+	formatTime,
+	mapsLink
+} from '../lib/format.js';
 
-export default function Recommendation({ result }) {
+export default function Recommendation({ result, directionsOrigin }) {
 	if (!result.best)
 		return (
 			<article
@@ -30,6 +37,16 @@ export default function Recommendation({ result }) {
 			</article>
 		);
 
+	const isEstimatedStopTime = result.best.stopTimeQuality === 'estimated';
+	const displayedStopTime = isEstimatedStopTime
+		? `~${formatRoundedTime(result.best.departureTime)}`
+		: formatTime(result.best.departureTime);
+	const manualSelection = result.boardingSelection?.mode === 'manual-stop';
+	const stopDirections = directionsLink({
+		destination: result.nearestStop,
+		origin: directionsOrigin || undefined
+	});
+
 	const share = () => {
 		trackEvent('whatsapp_shared', {
 			route_code: result.best.routeCode,
@@ -39,7 +56,10 @@ export default function Recommendation({ result }) {
 			result.nearestStop.lat,
 			result.nearestStop.lng
 		);
-		const text = `Vizag Airport Bus Details\n\n🚌 Bus Number: ${result.best.routeCode}\n📍 Boarding Point: ${result.best.stopName}\n🕐 Board Bus At: ${formatTime(result.best.departureTime).toUpperCase()}\n💰 Estimated Fare: ₹${result.best.fare}\n🗺️ Boarding Point Map: ${boardingPointMap}`;
+		const timeLabel = isEstimatedStopTime
+			? 'Estimated Bus Arrival'
+			: 'Published Departure';
+		const text = `Vizag Airport Bus Details\n\n🚌 Bus Number: ${result.best.routeCode}\n📍 Boarding Point: ${result.best.stopName}\n🕐 ${timeLabel}: ${displayedStopTime.toUpperCase()}\n⏰ Be At Stop By: ${formatRoundedTime(result.best.arriveAtStopBy, 'floor').toUpperCase()}\n💰 Estimated Fare: ₹${result.best.fare}\n🗺️ Boarding Point Map: ${boardingPointMap}`;
 		window.open(
 			`https://wa.me/?text=${encodeURIComponent(text)}`,
 			'_blank',
@@ -48,12 +68,25 @@ export default function Recommendation({ result }) {
 	};
 
 	const milestones = [
-		['Board bus', formatTime(result.best.departureTime)],
+		[
+			`Published departure from ${result.best.routeOriginName}`,
+			formatTime(result.best.routeOriginDepartureTime)
+		],
+		[
+			isEstimatedStopTime
+				? 'Estimated bus arrival at your stop'
+				: 'Published departure at your stop',
+			displayedStopTime
+		],
 		['Airport ETA', formatTime(result.best.airportArrivalTime)]
 	];
 	const details = [
 		[BadgeIndianRupee, 'Estimated fare', `₹${result.best.fare}`],
-		[MapPin, 'Nearest bus stop', result.nearestStop.name],
+		[
+			MapPin,
+			manualSelection ? 'Selected bus stop' : 'Nearest bus stop',
+			result.nearestStop.name
+		],
 		[Clock3, 'Be at airport by', formatTime(result.airportBy)],
 		[Luggage, 'Flight buffer', formatDuration(result.terminalBuffer)]
 	];
@@ -74,22 +107,43 @@ export default function Recommendation({ result }) {
 				</span>
 				<div>
 					<h2 className="text-xl font-bold tracking-tight">
-						Nearest Bus Stop is {result.best.stopName}
+						{manualSelection ? 'Selected Boarding Stop' : 'Nearest Bus Stop'} is{' '}
+						{result.best.stopName}
 					</h2>
 					<p className="mt-1 text-xs text-teal-100/60">
-						You are currently {result.nearestStop.distanceKm} km away from{' '}
-						{result.best.landmark}
+						{manualSelection
+							? result.best.landmark
+							: `You are currently ${result.nearestStop.distanceKm} km away from ${result.best.landmark}`}
 					</p>
 				</div>
 			</div>
-			<div className="my-6 grid grid-cols-2 items-center gap-3">
+
+			<div className="my-6 grid grid-cols-3 items-stretch gap-3 max-md:grid-cols-1">
 				{milestones.map(([label, value], index) => (
-					<div key={label} className={index === 1 ? 'text-right' : ''}>
+					<div
+						key={label}
+						className={`rounded-2xl bg-white/6 p-4 ${index === 1 ? 'ring-1 ring-teal-300/20' : ''}`}
+					>
 						<span className="block text-[.64rem] text-teal-100/55">{label}</span>
 						<strong className="mt-1 block text-base">{value}</strong>
+						{index === 1 && (
+							<small className="mt-1 block text-[.62rem] text-teal-100/55">
+								Be at the stop by{' '}
+								{formatRoundedTime(result.best.arriveAtStopBy, 'floor')}
+							</small>
+						)}
 					</div>
 				))}
 			</div>
+
+			{isEstimatedStopTime && (
+				<p className="mb-4 flex items-start gap-2 rounded-xl bg-white/6 p-3 text-xs leading-relaxed text-teal-100/70">
+					<CircleAlert className="mt-0.5 shrink-0" size={15} /> Intermediate stop
+					times are calculated estimates, not live arrivals. Arrive 10-15 minutes
+					early and use APSRTC Live Track when available.
+				</p>
+			)}
+
 			<div className="grid grid-cols-4 gap-3 max-lg:grid-cols-2 max-md:grid-cols-1">
 				{details.map(([Icon, label, value]) => (
 					<div
@@ -104,6 +158,7 @@ export default function Recommendation({ result }) {
 					</div>
 				))}
 			</div>
+
 			{result.next && !result.isNextSafe && (
 				<p className="mt-4 flex items-center gap-2 rounded-xl bg-amber-500/10 p-3 text-xs text-amber-200">
 					<CircleAlert size={16} /> The {formatTime(result.next.departureTime)} bus
@@ -113,25 +168,26 @@ export default function Recommendation({ result }) {
 			{result.outsideServiceArea && (
 				<p className="mt-4 flex items-start gap-2 rounded-xl bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-200">
 					<CircleAlert className="mt-0.5 shrink-0" size={16} /> Travel time to{' '}
-					{result.nearestStop.name} is not included. Reach the stop before the{' '}
-					{formatTime(result.best.departureTime)} boarding time.
+					{result.nearestStop.name} is not included. Reach the stop before{' '}
+					{formatRoundedTime(result.best.arriveAtStopBy, 'floor')}.
 				</p>
 			)}
+
 			<div className="mt-4 grid grid-cols-2 gap-3 max-md:grid-cols-1">
 				<a
 					className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white font-bold text-slate-700 transition active:scale-[.98]"
-					href={mapsLink(result.nearestStop.lat, result.nearestStop.lng)}
+					href={stopDirections}
 					target="_blank"
 					rel="noreferrer"
 					onClick={() =>
-						trackEvent('boarding_map_opened', {
-							map_type: 'recommendation',
+						trackEvent('maps_directions_opened', {
+							input_mode: result.boardingSelection?.mode || 'location',
 							route_code: result.best.routeCode,
 							stop_id: result.best.stopId
 						})
 					}
 				>
-					<MapPin size={17} /> Boarding point
+					<Navigation size={17} /> Directions to this stop
 				</a>
 				<button
 					className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 font-bold text-teal-50 transition active:scale-[.98]"
@@ -142,8 +198,13 @@ export default function Recommendation({ result }) {
 			</div>
 			{result.earlier && (
 				<p className="mt-3 text-center text-[.68rem] text-teal-100/55">
-					Want more margin? The previous bus leaves at{' '}
-					<strong>{formatTime(result.earlier.departureTime)}</strong>.
+					Want more margin? The previous bus reaches this stop at{' '}
+					<strong>
+						{result.earlier.stopTimeQuality === 'estimated'
+							? `~${formatRoundedTime(result.earlier.departureTime)}`
+							: formatTime(result.earlier.departureTime)}
+					</strong>
+					.
 				</p>
 			)}
 		</article>

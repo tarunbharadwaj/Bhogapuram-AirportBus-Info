@@ -6,14 +6,14 @@ import HomePage from './pages/HomePage.jsx';
 import { LoadingScreen } from './components/SiteSections.jsx';
 import { FALLBACK_SERVICE } from './data/fallbackService.js';
 
-const SERVICE_CACHE_KEY = 'bhogapuram-service-cache-v2';
+const SERVICE_CACHE_KEY = 'bhogapuram-service-cache-v6';
 const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
 const isAdminPage = currentPath === '/service-admin';
 const isFeedbackPage = currentPath === '/feedback';
 
 const isServiceData = (value) =>
 	Boolean(
-		value?.schemaVersion === 2 &&
+		Number(value?.schemaVersion) >= 2 &&
 			value?.status &&
 			value?.airport &&
 			Array.isArray(value.routes) &&
@@ -21,10 +21,18 @@ const isServiceData = (value) =>
 			Array.isArray(value.locations)
 	);
 
+const withServiceDefaults = (value) => ({
+	...value,
+	ticketing: {
+		...FALLBACK_SERVICE.ticketing,
+		...(value?.ticketing || {})
+	}
+});
+
 const initialPublicService = () => {
 	try {
 		const cached = JSON.parse(localStorage.getItem(SERVICE_CACHE_KEY));
-		if (isServiceData(cached)) return cached;
+		if (isServiceData(cached)) return withServiceDefaults(cached);
 	} catch {
 		// A bad or unavailable cache should never delay the public page.
 	}
@@ -58,10 +66,11 @@ export default function App() {
 						);
 					}
 					if (cancelled) return;
-					setService(result);
+					const hydratedResult = withServiceDefaults(result);
+					setService(hydratedResult);
 					setBackendReady(true);
 					try {
-						localStorage.setItem(SERVICE_CACHE_KEY, JSON.stringify(result));
+						localStorage.setItem(SERVICE_CACHE_KEY, JSON.stringify(hydratedResult));
 					} catch {
 						// Rendering live data is more important than cache availability.
 					}

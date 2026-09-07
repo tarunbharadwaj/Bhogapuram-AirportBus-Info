@@ -47,16 +47,24 @@ export class ServiceController {
 
   getTimetable = (req, res) => {
     const data = this.serviceModel.getAll();
-    const route = data.routes.find((item) => item.id === req.query.routeId) || data.routes[0];
+    const activeRoutes = data.routes.filter((item) => item.enabled);
+    const route = activeRoutes.find((item) => item.id === req.query.routeId) || activeRoutes[0];
+    if (!route) return res.status(404).json({ error: 'No active AeroExpress route is available.' });
     const stop = route.stops.find((item) => item.id === req.query.stopId) || route.stops[0];
     const direction = req.query.direction === 'from-airport' ? 'from-airport' : 'to-airport';
     const now = new Date();
     const serviceDate = indiaDateValue(now);
     const services = getDirectionalTimes(route, direction).map((time) => {
-      const departure = indiaDateTime(serviceDate, time);
+      const routeOriginDeparture = indiaDateTime(serviceDate, time);
+      const departure = new Date(routeOriginDeparture);
       if (direction === 'to-airport') departure.setMinutes(departure.getMinutes() + stop.offset);
       const arrival = new Date(departure.getTime() + stop.journeyMinutes * 60_000);
-      return { departure: departure.toISOString(), arrival: arrival.toISOString() };
+      return {
+        routeOriginDeparture: routeOriginDeparture.toISOString(),
+        departure: departure.toISOString(),
+        arrival: arrival.toISOString(),
+        timeQuality: direction === 'to-airport' && stop.offset > 0 ? 'estimated' : 'published',
+      };
     });
     res.json({ route, stop, direction, services, verifiedDate: data.status.verifiedDate });
   };

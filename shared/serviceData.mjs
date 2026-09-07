@@ -2,7 +2,17 @@ import { haversineKm } from './serviceRouting.mjs';
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
-export const SERVICE_DATA_SCHEMA_VERSION = 2;
+export const SERVICE_DATA_SCHEMA_VERSION = 6;
+
+export const DEFAULT_TICKETING = {
+	onlineBookingStatus: 'unavailable',
+	title: 'Tickets are available onboard only',
+	message:
+		'AeroExpress tickets cannot currently be purchased online. Board the bus and buy your ticket directly from the conductor.',
+	bookingUrl: 'https://www.apsrtconline.in/oprs-web/',
+	trackingUrl: 'https://apsrtclivetrack.com/',
+	checkedDate: '2026-09-07'
+};
 
 export const AIRPORT = {
 	id: 'bhogapuram-airport',
@@ -142,6 +152,7 @@ const route = ({ timetables, estimatedJourneyMinutes, stops, ...details }) => ({
 
 export const DEFAULT_SERVICE_DATA = {
 	schemaVersion: SERVICE_DATA_SCHEMA_VERSION,
+	ticketing: clone(DEFAULT_TICKETING),
 	status: {
 		verifiedDate: '2026-08-17',
 		announcement:
@@ -153,12 +164,23 @@ export const DEFAULT_SERVICE_DATA = {
 	locations: [
 		{ id: 'mvp-colony', name: 'MVP Colony', lat: 17.7424, lng: 83.336 },
 		{ id: 'siripuram', name: 'Siripuram', lat: 17.72054, lng: 83.32041 },
-		{ id: 'rtc-complex', name: 'RTC Complex', lat: 17.7251, lng: 83.3019 },
+		{
+			id: 'vuda-park',
+			name: 'Opposite VUDA Park',
+			lat: 17.723734,
+			lng: 83.337496
+		},
+		{
+			id: 'rtc-complex',
+			name: 'RTC Complex',
+			lat: 17.723881,
+			lng: 83.305552
+		},
 		{
 			id: 'railway-station',
 			name: 'Visakhapatnam Railway Station',
-			lat: 17.72193,
-			lng: 83.29128
+			lat: 17.722783,
+			lng: 83.290794
 		},
 		{ id: 'nad', name: 'NAD Junction', lat: 17.744512, lng: 83.236829 },
 		{ id: 'gajuwaka', name: 'Old Gajuwaka', lat: 17.68605, lng: 83.20421 },
@@ -253,8 +275,9 @@ export const DEFAULT_SERVICE_DATA = {
 		route({
 			id: 'asr-2',
 			code: 'ASR-2',
-			name: 'Old Gajuwaka · Scindia · IT Hills',
-			description: 'Via Scindia, RTC Complex, VUDA Park, Siripuram and IT Hills.',
+			name: 'Old Gajuwaka · Railway Station · IT Hills',
+			description:
+				'Via Scindia, Kancharapalem, Railway Station, RTC Complex, Siripuram, VUDA Park and IT Hills.',
 			color: '#3767e8',
 			enabled: true,
 			estimatedJourneyMinutes: 150,
@@ -291,6 +314,26 @@ export const DEFAULT_SERVICE_DATA = {
 					fare: 400
 				},
 				{
+					id: 'railway-stop',
+					placeId: 'railway-station',
+					name: 'Railway Station',
+					landmark: 'APSRTC bus platform at Visakhapatnam Railway Station',
+					coordinateQuality: 'user-provided-mapped-stop',
+					lat: 17.722783,
+					lng: 83.290794,
+					fare: 300
+				},
+				{
+					id: 'rtc-complex-stop',
+					placeId: 'rtc-complex',
+					name: 'RTC Complex',
+					landmark: 'RTC Complex APSRTC bus stop',
+					coordinateQuality: 'user-provided-mapped-stop',
+					lat: 17.723881,
+					lng: 83.305552,
+					fare: 350
+				},
+				{
 					id: 'siripuram-stop',
 					placeId: 'siripuram',
 					name: 'Siripuram',
@@ -299,6 +342,16 @@ export const DEFAULT_SERVICE_DATA = {
 					lat: 17.7209182,
 					lng: 83.3218202,
 					fare: 350
+				},
+				{
+					id: 'vuda-park-stop',
+					placeId: 'vuda-park',
+					name: 'Opposite VUDA Park',
+					landmark: 'Opposite VUDA Park APSRTC bus stop',
+					coordinateQuality: 'user-provided-mapped-stop',
+					lat: 17.723734,
+					lng: 83.337496,
+					fare: 300
 				},
 				{
 					id: 'iskcon-temple-stop',
