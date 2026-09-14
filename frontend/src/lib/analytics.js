@@ -23,6 +23,9 @@ const allowedEvents = new Set([
 	'timetable_mode_changed',
 	'ticketing_link_opened',
 	'live_tracking_opened',
+	'stop_tracking_started',
+	'stop_tracking_result',
+	'planner_tracking_opened',
 	'faq_opened'
 ]);
 
@@ -41,7 +44,9 @@ const allowedParameters = new Set([
 	'input_mode',
 	'schedule_view',
 	'link_type',
-	'faq_id'
+	'faq_id',
+	'match_type',
+	'tracking_status'
 ]);
 
 let initialized = false;

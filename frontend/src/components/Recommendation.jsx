@@ -6,8 +6,10 @@ import {
 	Luggage,
 	MapPin,
 	Navigation,
+	Radio,
 	Send
 } from 'lucide-react';
+import { indiaDateValue } from '../../../shared/airportDepartures.mjs';
 import { trackEvent } from '../lib/analytics.js';
 import {
 	directionsLink,
@@ -17,7 +19,7 @@ import {
 	mapsLink
 } from '../lib/format.js';
 
-export default function Recommendation({ result, directionsOrigin }) {
+export default function Recommendation({ result, directionsOrigin, onTrackBus }) {
 	if (!result.best)
 		return (
 			<article
@@ -46,6 +48,20 @@ export default function Recommendation({ result, directionsOrigin }) {
 		destination: result.nearestStop,
 		origin: directionsOrigin || undefined
 	});
+	const trackingPlaceId = result.boardingSelection?.placeId || result.nearestStop.placeId;
+	const trackingIsToday = indiaDateValue(result.best.routeOriginDepartureTime) === indiaDateValue();
+	const trackBus = () => {
+		trackEvent('planner_tracking_opened', {
+			route_code: result.best.routeCode,
+			stop_id: trackingPlaceId,
+			direction: 'to-airport'
+		});
+		onTrackBus?.({
+			placeId: trackingPlaceId,
+			routeCode: result.best.routeCode,
+			scheduledOriginAt: result.best.routeOriginDepartureTime
+		});
+	};
 
 	const share = () => {
 		trackEvent('whatsapp_shared', {
@@ -173,7 +189,7 @@ export default function Recommendation({ result, directionsOrigin }) {
 				</p>
 			)}
 
-			<div className="mt-4 grid grid-cols-2 gap-3 max-md:grid-cols-1">
+			<div className={`mt-4 grid gap-3 max-md:grid-cols-1 ${onTrackBus ? 'grid-cols-3 max-lg:grid-cols-2' : 'grid-cols-2'}`}>
 				<a
 					className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white font-bold text-slate-700 transition active:scale-[.98]"
 					href={stopDirections}
@@ -195,7 +211,15 @@ export default function Recommendation({ result, directionsOrigin }) {
 				>
 					<Send size={17} /> Share on WhatsApp
 				</button>
+				{onTrackBus && <button
+					type="button"
+					className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-teal-300/30 bg-teal-300/10 font-bold text-teal-50 transition active:scale-[.98]"
+					onClick={trackBus}
+				>
+					<Radio size={17} /> {trackingIsToday ? 'Track this bus' : 'Check tracking availability'}
+				</button>}
 			</div>
+			{onTrackBus && !trackingIsToday && <p className="mt-3 text-center text-[.68rem] text-teal-100/55">Live tracking becomes available on your journey date; published timing remains available now.</p>}
 			{result.earlier && (
 				<p className="mt-3 text-center text-[.68rem] text-teal-100/55">
 					Want more margin? The previous bus reaches this stop at{' '}

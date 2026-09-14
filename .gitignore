@@ -6,4 +6,6 @@ backend/data/service-data.json
 .env.local
 .env.*.local
 npm-debug.log*
+test-results/
+playwright-report/
 _redirects

@@ -24,11 +24,11 @@ export default function Header() {
 				</button>
 			</div>
 			<nav className={navClass} aria-label="Main navigation">
-				{['Plan a trip', 'Timetables', 'Routes & stops'].map((label, index) => (
+				{['Plan a trip', 'Timetables', 'Live tracking', 'Routes & stops'].map((label, index) => (
 					<button
 						key={label}
 						className="rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white dark:hover:bg-white/8 max-md:text-left"
-						onClick={() => navigate(['planner', 'timetables', 'routes'][index])}
+						onClick={() => navigate(['planner', 'timetables', 'live-tracking', 'routes'][index])}
 					>
 						{label}
 					</button>
