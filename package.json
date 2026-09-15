@@ -12,9 +12,11 @@
     "dev:frontend": "npm run dev -w frontend",
     "build": "npm run build -w frontend",
     "start": "npm run start -w backend",
-    "test": "npm run test -w backend && npm run test -w frontend"
+    "test": "npm run test -w backend && npm run test -w frontend",
+    "generate-qr": "node scripts/generateQR.js"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "qrcode": "^1.5.4"
   }
 }

@@ -88,6 +88,36 @@ For local development, copy `frontend/.env.example` to `frontend/.env.local` and
 
 Tracked events use route codes, stop IDs, flight type, permission outcomes, and broad accuracy bands only. Precise coordinates and flight departure values are never sent.
 
+## Offline promotion QR codes
+
+Generate a print-ready QR code for the website entirely on your computer:
+
+```bash
+npm run generate-qr
+```
+
+The command creates a 1500×1500 PNG and a scalable SVG in `frontend/public/qr`. Both use a white background, black modules, a six-module quiet zone, and Level H error correction. Use the PNG for ordinary flyers and tabletop cards; prefer the SVG when a professional printer needs to resize the artwork.
+
+To identify scans from a particular hotel or offline location in Google Analytics, provide both a source and campaign:
+
+```bash
+npm run generate-qr -- --source=hotel --campaign=hotel_name
+npm run generate-qr -- --source=travel_agency --campaign=agency_name
+npm run generate-qr -- --source=apartment --campaign=apartment_name
+```
+
+For example, the first command encodes:
+
+```text
+https://vizagairportbus.com/?utm_source=hotel&utm_medium=qr&utm_campaign=hotel_name
+```
+
+It creates `vizag-airport-bus-hotel-name-qr.png` and `.svg`. Give every hotel or placement a distinct campaign value, such as `dolphin_hotel_reception` or `beach_road_table_card`. The campaign name is safely converted to a filename, while the full value is URL-encoded inside the QR code.
+
+In GA4, view the results under **Reports → Acquisition → Traffic acquisition**. Use **Session source / medium** to find values such as `hotel / qr`, then add or select **Session campaign** to see the specific hotel name. Scans appear after a visitor opens the encoded link and GA4 records the visit; generating or printing a QR code does not itself create an analytics event.
+
+Always test the final printed proof with Android and iPhone cameras. Keep the white border intact, avoid placing graphics over the code, and do not stretch or recolor it.
+
 ## Website feedback
 
 The public feedback page is available at `/feedback`. It sends feedback directly to the site owner's email through FormSubmit.co and does not use the Render backend.
