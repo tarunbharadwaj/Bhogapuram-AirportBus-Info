@@ -14,9 +14,9 @@ import {
 	formatDuration,
 	formatRoundedTime,
 	formatTime,
-	mapsLink
+	mapsLink,
+	airportNavigationLink
 } from '../lib/format.js';
-import { journeyNavigationLink } from '../lib/journeyTracking.js';
 
 export default function Recommendation({ result, directionsOrigin }) {
 	if (!result.best)
@@ -47,7 +47,7 @@ export default function Recommendation({ result, directionsOrigin }) {
 		destination: result.nearestStop,
 		origin: directionsOrigin || undefined
 	});
-	const airportNavigation = journeyNavigationLink();
+	const airportNavigation = airportNavigationLink();
 
 	const share = () => {
 		trackEvent('whatsapp_shared', {

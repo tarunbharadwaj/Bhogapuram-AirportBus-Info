@@ -9,7 +9,6 @@ import {
 } from '../components/SiteSections.jsx';
 import StatusNotice from '../components/StatusNotice.jsx';
 import Timetable from '../components/Timetable.jsx';
-import JourneyPromo from '../components/JourneyPromo.jsx';
 
 export default function HomePage({ service, backendReady }) {
 	return (
@@ -21,7 +20,6 @@ export default function HomePage({ service, backendReady }) {
 					service={service}
 					backendReady={backendReady}
 				/>
-				<JourneyPromo />
 				{/* <QuickFacts service={service} /> */}
 				<Timetable service={service} />
 				<Routes service={service} />

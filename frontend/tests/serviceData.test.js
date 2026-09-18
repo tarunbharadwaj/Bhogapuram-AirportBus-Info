@@ -12,7 +12,7 @@ import {
 	indiaDateValue
 } from '../../shared/airportDepartures.mjs';
 import { FALLBACK_SERVICE } from '../src/data/fallbackService.js';
-import { directionsLink } from '../src/lib/format.js';
+import { airportNavigationLink, directionsLink } from '../src/lib/format.js';
 import { findNearestBoardingPoint } from '../src/lib/nearestStop.js';
 import { recommendTrip } from '../src/lib/recommendTrip.js';
 import {
@@ -277,4 +277,12 @@ test('builds directions with a captured origin only when one is provided', () =>
 		directionsLink({ destination, origin: { lat: 17.7, lng: 83.3 } })
 	);
 	assert.equal(locationUrl.searchParams.get('origin'), '17.7,83.3');
+});
+
+test('opens airport navigation from the device location to the supplied airport pin', () => {
+	const url = new URL(airportNavigationLink());
+	assert.equal(url.searchParams.get('destination'), '17.9751901,83.5070719');
+	assert.equal(url.searchParams.get('travelmode'), 'driving');
+	assert.equal(url.searchParams.get('dir_action'), 'navigate');
+	assert.equal(url.searchParams.has('origin'), false);
 });
