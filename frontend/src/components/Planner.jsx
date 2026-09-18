@@ -59,7 +59,7 @@ const currentMinute = () => {
 	return now;
 };
 
-export default function Planner({ service, backendReady }) {
+export default function Planner({ service, backendReady, onStartJourney }) {
 	const [tripDirection, setTripDirection] = useState('to-airport');
 	const flightDateInputRef = useRef(null);
 	const autoLocateAttempted = useRef(false);
@@ -756,6 +756,7 @@ export default function Planner({ service, backendReady }) {
 				<Recommendation
 					result={result}
 					directionsOrigin={startMode === 'location' ? coordinates : null}
+					onStartJourney={onStartJourney}
 				/>
 			)}
 		</section>

@@ -28,6 +28,16 @@ const pageMetadata = {
 		openGraphDescription: 'Service administration page.',
 		url: `${SITE_URL}/service-admin`,
 		robots: 'noindex, nofollow, noarchive'
+	},
+	'/journey': {
+		title: 'Onboard Journey Companion | Vizag Airport Bus Info',
+		description:
+			'Follow AeroExpress stops during your journey to Vizag Airport and continue navigation in Google Maps.',
+		openGraphTitle: 'Onboard Journey Companion | Vizag Airport Bus Info',
+		openGraphDescription:
+			'Follow your AeroExpress route stops on the way to Vizag Airport.',
+		url: `${SITE_URL}/journey`,
+		robots: 'noindex, follow'
 	}
 };
 

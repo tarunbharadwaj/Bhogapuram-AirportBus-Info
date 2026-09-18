@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api } from './lib/api.js';
 import AdminPage from './pages/AdminPage.jsx';
 import FeedbackPage from './pages/FeedbackPage.jsx';
 import HomePage from './pages/HomePage.jsx';
+import JourneyPage from './pages/JourneyPage.jsx';
 import { LoadingScreen } from './components/SiteSections.jsx';
 import { FALLBACK_SERVICE } from './data/fallbackService.js';
+import { applyPageMetadata } from './lib/seo.js';
 
 const SERVICE_CACHE_KEY = 'bhogapuram-service-cache-v6';
-const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
-const isAdminPage = currentPath === '/service-admin';
-const isFeedbackPage = currentPath === '/feedback';
+const browserPath = () => window.location.pathname.replace(/\/+$/, '') || '/';
 
 const isServiceData = (value) =>
 	Boolean(
@@ -40,11 +40,28 @@ const initialPublicService = () => {
 };
 
 export default function App() {
+	const [currentPath, setCurrentPath] = useState(browserPath);
+	const isAdminPage = currentPath === '/service-admin';
+	const isFeedbackPage = currentPath === '/feedback';
+	const isJourneyPage = currentPath === '/journey';
 	const [service, setService] = useState(() =>
-		isAdminPage || isFeedbackPage ? null : initialPublicService()
+		browserPath() === '/service-admin' || browserPath() === '/feedback'
+			? null
+			: initialPublicService()
 	);
 	const [backendReady, setBackendReady] = useState(false);
 	const [error, setError] = useState('');
+	useEffect(() => {
+		const updatePath = () => setCurrentPath(browserPath());
+		window.addEventListener('popstate', updatePath);
+		return () => window.removeEventListener('popstate', updatePath);
+	}, []);
+	useEffect(() => applyPageMetadata(currentPath), [currentPath]);
+	const navigate = useCallback((path, state = {}) => {
+		window.history.pushState(state, '', path);
+		setCurrentPath(browserPath());
+		window.scrollTo({ top: 0, behavior: 'smooth' });
+	}, []);
 	useEffect(() => {
 		if (isFeedbackPage) return undefined;
 
@@ -86,13 +103,24 @@ export default function App() {
 		return () => {
 			cancelled = true;
 		};
-	}, []);
+	}, [isAdminPage, isFeedbackPage]);
 	if (isFeedbackPage) return <FeedbackPage />;
 	if (error) return <LoadingScreen error={error} />;
 	if (!service) return <LoadingScreen />;
+	if (isJourneyPage)
+		return (
+			<JourneyPage
+				service={service}
+				initialJourney={window.history.state?.journey || null}
+			/>
+		);
 	return isAdminPage ? (
 		<AdminPage service={service} onSaved={setService} />
 	) : (
-		<HomePage service={service} backendReady={backendReady} />
+		<HomePage
+			service={service}
+			backendReady={backendReady}
+			onNavigate={navigate}
+		/>
 	);
 }

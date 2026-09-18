@@ -9,14 +9,22 @@ import {
 } from '../components/SiteSections.jsx';
 import StatusNotice from '../components/StatusNotice.jsx';
 import Timetable from '../components/Timetable.jsx';
+import JourneyPromo from '../components/JourneyPromo.jsx';
 
-export default function HomePage({ service, backendReady }) {
+export default function HomePage({ service, backendReady, onNavigate }) {
 	return (
 		<div id="top">
 			<Header />
 			<main className="overflow-hidden">
 				{/* <StatusNotice status={service.status} /> */}
-				<Planner service={service} backendReady={backendReady} />
+				<Planner
+					service={service}
+					backendReady={backendReady}
+					onStartJourney={(journey) =>
+						onNavigate('/journey', { journey })
+					}
+				/>
+				<JourneyPromo />
 				{/* <QuickFacts service={service} /> */}
 				<Timetable service={service} />
 				<Routes service={service} />

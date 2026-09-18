@@ -23,7 +23,11 @@ const allowedEvents = new Set([
 	'timetable_mode_changed',
 	'ticketing_link_opened',
 	'live_tracking_opened',
-	'faq_opened'
+	'faq_opened',
+	'journey_companion_started',
+	'journey_companion_ended',
+	'journey_maps_opened',
+	'journey_location_status'
 ]);
 
 const allowedParameters = new Set([
@@ -41,7 +45,10 @@ const allowedParameters = new Set([
 	'input_mode',
 	'schedule_view',
 	'link_type',
-	'faq_id'
+	'faq_id',
+	'entry_source',
+	'location_status',
+	'journey_status'
 ]);
 
 let initialized = false;
