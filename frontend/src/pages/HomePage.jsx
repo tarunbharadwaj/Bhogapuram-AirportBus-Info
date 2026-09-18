@@ -11,7 +11,7 @@ import StatusNotice from '../components/StatusNotice.jsx';
 import Timetable from '../components/Timetable.jsx';
 import JourneyPromo from '../components/JourneyPromo.jsx';
 
-export default function HomePage({ service, backendReady, onNavigate }) {
+export default function HomePage({ service, backendReady }) {
 	return (
 		<div id="top">
 			<Header />
@@ -20,9 +20,6 @@ export default function HomePage({ service, backendReady, onNavigate }) {
 				<Planner
 					service={service}
 					backendReady={backendReady}
-					onStartJourney={(journey) =>
-						onNavigate('/journey', { journey })
-					}
 				/>
 				<JourneyPromo />
 				{/* <QuickFacts service={service} /> */}

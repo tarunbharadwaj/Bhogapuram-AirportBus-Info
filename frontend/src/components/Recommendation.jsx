@@ -6,7 +6,6 @@ import {
 	Luggage,
 	MapPin,
 	Navigation,
-	Route,
 	Send
 } from 'lucide-react';
 import { trackEvent } from '../lib/analytics.js';
@@ -17,12 +16,9 @@ import {
 	formatTime,
 	mapsLink
 } from '../lib/format.js';
+import { journeyNavigationLink } from '../lib/journeyTracking.js';
 
-export default function Recommendation({
-	result,
-	directionsOrigin,
-	onStartJourney
-}) {
+export default function Recommendation({ result, directionsOrigin }) {
 	if (!result.best)
 		return (
 			<article
@@ -51,14 +47,7 @@ export default function Recommendation({
 		destination: result.nearestStop,
 		origin: directionsOrigin || undefined
 	});
-	const startJourney = () =>
-		onStartJourney?.({
-			routeCode: result.best.routeCode,
-			boardingStopId: result.best.stopId,
-			airportArrivalTime: result.best.airportArrivalTime,
-			airportBy: result.airportBy,
-			terminalBuffer: result.terminalBuffer
-		});
+	const airportNavigation = journeyNavigationLink();
 
 	const share = () => {
 		trackEvent('whatsapp_shared', {
@@ -208,13 +197,20 @@ export default function Recommendation({
 				>
 					<Send size={17} /> Share on WhatsApp
 				</button>
-				<button
-					type="button"
+				<a
+					href={airportNavigation}
+					target="_blank"
+					rel="noopener noreferrer"
 					className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-teal-300/30 bg-teal-300/10 font-bold text-teal-50 transition active:scale-[.98] max-lg:col-span-2 max-md:col-span-1"
-					onClick={startJourney}
+					onClick={() =>
+						trackEvent('journey_maps_opened', {
+							route_code: result.best.routeCode,
+							stop_id: result.best.stopId
+						})
+					}
 				>
-					<Route size={17} /> Start journey to airport
-				</button>
+					<Navigation size={17} /> Start journey to airport
+				</a>
 			</div>
 			{result.earlier && (
 				<p className="mt-3 text-center text-[.68rem] text-teal-100/55">

@@ -3,6 +3,10 @@ import { haversineKm } from '../../../shared/serviceRouting.mjs';
 export const JOURNEY_SESSION_KEY = 'vizag-airport-journey-v1';
 export const MAX_TRACKING_ACCURACY_METERS = 250;
 export const MAX_READING_AGE_MS = 60_000;
+export const AIRPORT_NAVIGATION_DESTINATION = Object.freeze({
+	lat: 17.9751901,
+	lng: 83.5070719
+});
 
 const isFiniteCoordinate = (value) =>
 	typeof value === 'number' && Number.isFinite(value);
@@ -87,7 +91,9 @@ export const restoreJourneySession = (service, value) => {
 	}
 };
 
-export const journeyNavigationLink = (airport) => {
+export const journeyNavigationLink = (
+	airport = AIRPORT_NAVIGATION_DESTINATION
+) => {
 	const params = new URLSearchParams({
 		api: '1',
 		destination: `${airport.lat},${airport.lng}`,

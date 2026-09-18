@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createDefaultServiceData } from '../../shared/serviceData.mjs';
 import {
+	AIRPORT_NAVIGATION_DESTINATION,
 	MAX_TRACKING_ACCURACY_METERS,
 	createJourney,
 	createJourneySession,
@@ -121,12 +122,12 @@ test('session data contains no coordinates and is validated against active servi
 });
 
 test('Google Maps navigation uses device location by omitting the origin', () => {
-	const url = new URL(journeyNavigationLink(service.airport));
+	const url = new URL(journeyNavigationLink());
 	assert.equal(url.origin, 'https://www.google.com');
 	assert.equal(url.searchParams.get('api'), '1');
 	assert.equal(
 		url.searchParams.get('destination'),
-		`${service.airport.lat},${service.airport.lng}`
+		`${AIRPORT_NAVIGATION_DESTINATION.lat},${AIRPORT_NAVIGATION_DESTINATION.lng}`
 	);
 	assert.equal(url.searchParams.get('travelmode'), 'driving');
 	assert.equal(url.searchParams.get('dir_action'), 'navigate');

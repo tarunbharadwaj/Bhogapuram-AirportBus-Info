@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from './lib/api.js';
 import AdminPage from './pages/AdminPage.jsx';
 import FeedbackPage from './pages/FeedbackPage.jsx';
@@ -57,11 +57,6 @@ export default function App() {
 		return () => window.removeEventListener('popstate', updatePath);
 	}, []);
 	useEffect(() => applyPageMetadata(currentPath), [currentPath]);
-	const navigate = useCallback((path, state = {}) => {
-		window.history.pushState(state, '', path);
-		setCurrentPath(browserPath());
-		window.scrollTo({ top: 0, behavior: 'smooth' });
-	}, []);
 	useEffect(() => {
 		if (isFeedbackPage) return undefined;
 
@@ -117,10 +112,6 @@ export default function App() {
 	return isAdminPage ? (
 		<AdminPage service={service} onSaved={setService} />
 	) : (
-		<HomePage
-			service={service}
-			backendReady={backendReady}
-			onNavigate={navigate}
-		/>
+		<HomePage service={service} backendReady={backendReady} />
 	);
 }

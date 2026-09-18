@@ -105,7 +105,7 @@ export default function JourneyPage({ service, initialJourney }) {
 	const remainingStops = journey
 		? Math.max(0, journey.points.length - progress.confirmedIndex - 2)
 		: 0;
-	const navigationUrl = journeyNavigationLink(service.airport);
+	const navigationUrl = journeyNavigationLink();
 	const [statusTitle, statusDescription] =
 		statusCopy[progress.status] || statusCopy.waiting;
 
