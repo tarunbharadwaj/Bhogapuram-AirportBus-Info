@@ -16,10 +16,7 @@ export default function HomePage({ service, backendReady }) {
 			<Header />
 			<main className="overflow-hidden">
 				{/* <StatusNotice status={service.status} /> */}
-				<Planner
-					service={service}
-					backendReady={backendReady}
-				/>
+				<Planner service={service} backendReady={backendReady} />
 				{/* <QuickFacts service={service} /> */}
 				<Timetable service={service} />
 				<Routes service={service} />
