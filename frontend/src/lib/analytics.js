@@ -23,7 +23,8 @@ const allowedEvents = new Set([
 	'timetable_mode_changed',
 	'ticketing_link_opened',
 	'live_tracking_opened',
-	'faq_opened'
+	'faq_opened',
+	'journey_maps_opened'
 ]);
 
 const allowedParameters = new Set([

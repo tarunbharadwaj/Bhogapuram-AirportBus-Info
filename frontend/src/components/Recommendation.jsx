@@ -14,7 +14,8 @@ import {
 	formatDuration,
 	formatRoundedTime,
 	formatTime,
-	mapsLink
+	mapsLink,
+	airportNavigationLink
 } from '../lib/format.js';
 
 export default function Recommendation({ result, directionsOrigin }) {
@@ -46,6 +47,7 @@ export default function Recommendation({ result, directionsOrigin }) {
 		destination: result.nearestStop,
 		origin: directionsOrigin || undefined
 	});
+	const airportNavigation = airportNavigationLink();
 
 	const share = () => {
 		trackEvent('whatsapp_shared', {
@@ -173,7 +175,7 @@ export default function Recommendation({ result, directionsOrigin }) {
 				</p>
 			)}
 
-			<div className="mt-4 grid grid-cols-2 gap-3 max-md:grid-cols-1">
+			<div className="mt-4 grid grid-cols-3 gap-3 max-lg:grid-cols-2 max-md:grid-cols-1">
 				<a
 					className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-white font-bold text-slate-700 transition active:scale-[.98]"
 					href={stopDirections}
@@ -195,6 +197,30 @@ export default function Recommendation({ result, directionsOrigin }) {
 				>
 					<Send size={17} /> Share on WhatsApp
 				</button>
+				<a
+					href={airportNavigation}
+					target="_blank"
+					rel="noopener noreferrer"
+					aria-label="Boarded the bus? Track journey to airport"
+					className="flex min-h-12 items-center justify-center gap-2.5 rounded-xl border border-teal-300/30 bg-teal-300/10 px-4 py-3 font-bold text-teal-50 transition active:scale-[.98] max-lg:col-span-2 max-md:col-span-1"
+					onClick={() =>
+						trackEvent('journey_maps_opened', {
+							route_code: result.best.routeCode,
+							stop_id: result.best.stopId
+						})
+					}
+				>
+					<Navigation className="shrink-0" size={18} aria-hidden="true" />
+					<span aria-hidden="true" className="text-center max-md:text-left">
+						<span className="hidden text-[.65rem] font-semibold uppercase tracking-[.12em] text-teal-100/70 max-md:block">
+							Boarded the bus?
+						</span>
+						<span className="block leading-snug max-md:text-sm">
+							<span className="max-md:hidden">Boarded the bus? </span>
+							Track journey to airport
+						</span>
+					</span>
+				</a>
 			</div>
 			{result.earlier && (
 				<p className="mt-3 text-center text-[.68rem] text-teal-100/55">

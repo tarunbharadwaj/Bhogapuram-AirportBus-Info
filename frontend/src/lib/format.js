@@ -10,6 +10,21 @@ export const formatDuration = (minutes) => {
 };
 export const mapsLink = (lat, lng) => `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 
+const AIRPORT_NAVIGATION_DESTINATION = Object.freeze({
+	lat: 17.9751901,
+	lng: 83.5070719
+});
+
+export const airportNavigationLink = () => {
+	const params = new URLSearchParams({
+		api: '1',
+		destination: `${AIRPORT_NAVIGATION_DESTINATION.lat},${AIRPORT_NAVIGATION_DESTINATION.lng}`,
+		travelmode: 'driving',
+		dir_action: 'navigate'
+	});
+	return `https://www.google.com/maps/dir/?${params.toString()}`;
+};
+
 export const formatRoundedTime = (value, mode = 'nearest') => {
 	const interval = 5 * 60_000;
 	const timestamp = new Date(value).getTime();
