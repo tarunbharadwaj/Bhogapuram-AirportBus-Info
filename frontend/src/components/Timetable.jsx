@@ -197,16 +197,19 @@ export default function Timetable({ service }) {
 					</div>
 					{visible.map((item, index) => {
 						const estimated = item.timeQuality === 'estimated';
+						const isNextBus = viewMode === 'upcoming' && index === 0;
 						return (
 							<div
 								key={`${item.departure}-${index}`}
-								className={`grid min-h-16 grid-cols-[2.2rem_auto_auto_1fr_auto] items-center gap-3 border-t border-slate-200 text-sm dark:border-white/10 max-sm:grid-cols-[2.2rem_1fr_auto] ${viewMode === 'upcoming' && index === 0 ? 'rounded-xl border border-brand/20 bg-brand-soft px-3' : ''}`}
+								className={`grid min-h-16 grid-cols-[2.2rem_auto_auto_1fr_auto] items-center gap-3 border-t border-slate-200 text-sm dark:border-white/10 max-sm:grid-cols-[2.2rem_minmax(0,1fr)_auto] ${isNextBus ? 'rounded-xl border border-brand/20 bg-brand-soft px-3 max-sm:py-3' : ''}`}
 							>
-								<span className="flex size-8 items-center justify-center rounded-lg bg-brand-soft text-brand">
+								<span
+									className={`flex size-8 items-center justify-center rounded-lg bg-brand-soft text-brand ${isNextBus ? 'max-sm:row-span-2' : ''}`}
+								>
 									<BusFront size={17} />
 								</span>
-								<span className="grid gap-0.5">
-									<strong>
+								<span className="grid min-w-0 gap-0.5">
+									<strong className="whitespace-nowrap">
 										{estimated ? '~' : ''}
 										{estimated
 											? formatRoundedTime(item.departure)
@@ -218,13 +221,15 @@ export default function Timetable({ service }) {
 										</small>
 									)}
 								</span>
-								{viewMode === 'upcoming' && index === 0 && (
-									<em className="whitespace-nowrap rounded-full bg-brand px-2 py-1 text-[.55rem] font-extrabold not-italic uppercase tracking-wider text-white max-sm:col-start-3">
+								{isNextBus && (
+									<em className="whitespace-nowrap rounded-full bg-brand px-2 py-1 text-[.55rem] font-extrabold not-italic uppercase tracking-wider text-white max-sm:col-span-2 max-sm:col-start-2 max-sm:row-start-2 max-sm:justify-self-start">
 										{nextBusIsTomorrow ? 'Next bus · Tomorrow' : 'Next bus'}
 									</em>
 								)}
 								<span className="h-px bg-gradient-to-r from-slate-200 to-transparent dark:from-white/15 max-sm:hidden" />
-								<span className="text-right">{formatTime(item.arrival)}</span>
+								<span className="whitespace-nowrap text-right max-sm:col-start-3 max-sm:row-start-1">
+									{formatTime(item.arrival)}
+								</span>
 							</div>
 						);
 					})}
