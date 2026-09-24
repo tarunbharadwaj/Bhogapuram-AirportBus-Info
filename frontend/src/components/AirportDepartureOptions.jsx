@@ -10,21 +10,30 @@ import {
 import { indiaDateValue } from '../../../shared/airportDepartures.mjs';
 import { trackEvent } from '../lib/analytics.js';
 import { formatShortDate, formatTime, mapsLink } from '../lib/format.js';
+import QuickFeedback from './QuickFeedback.jsx';
 
 export default function AirportDepartureOptions({ result }) {
 	if (!result?.options?.length)
 		return (
-			<article
-				id="airport-departure-results"
-				className="col-span-full rounded-3xl border border-amber-300/25 bg-amber-50 p-6 text-amber-950 dark:bg-amber-300/8 dark:text-amber-100"
-				role="status"
-			>
-				<h2 className="text-lg font-bold">No airport bus is available</h2>
-				<p className="mt-1 text-sm opacity-75">
-					{result?.warning ||
-						'No published departure is available for this destination.'}
-				</p>
-			</article>
+			<div id="airport-departure-results" className="col-span-full grid gap-4">
+				<article
+					className="rounded-3xl border border-amber-300/25 bg-amber-50 p-6 text-amber-950 dark:bg-amber-300/8 dark:text-amber-100"
+					role="status"
+				>
+					<h2 className="text-lg font-bold">No airport bus is available</h2>
+					<p className="mt-1 text-sm opacity-75">
+						{result?.warning ||
+							'No published departure is available for this destination.'}
+					</p>
+				</article>
+				<QuickFeedback
+					key="from_airport_unavailable"
+					feedbackContext="from_airport_unavailable"
+					resultStatus="unavailable"
+					direction="from-airport"
+					stopId={result?.destination?.placeId}
+				/>
+			</div>
 		);
 	const readyDate = indiaDateValue(result.readyAt);
 	const destinationMap = mapsLink(result.destination.lat, result.destination.lng);
@@ -52,11 +61,11 @@ export default function AirportDepartureOptions({ result }) {
 	};
 
 	return (
-		<article
-			id="airport-departure-results"
-			className="col-span-full rounded-3xl bg-[#122c2b] p-7 text-white shadow-[0_20px_50px_rgba(15,46,44,.2)] max-md:p-5"
-			aria-labelledby="airport-departure-results-title"
-		>
+		<div id="airport-departure-results" className="col-span-full grid gap-4">
+			<article
+				className="rounded-3xl bg-[#122c2b] p-7 text-white shadow-[0_20px_50px_rgba(15,46,44,.2)] max-md:p-5"
+				aria-labelledby="airport-departure-results-title"
+			>
 			<div className="flex items-center gap-2 text-[.68rem] font-extrabold uppercase tracking-widest text-teal-200">
 				<Check size={14} /> Airport to city
 			</div>
@@ -164,6 +173,15 @@ export default function AirportDepartureOptions({ result }) {
 			<p className="mt-4 text-center text-[.68rem] leading-relaxed text-teal-100/55">
 				Airport departures are published times; city arrival times are estimates.
 			</p>
-		</article>
+			</article>
+			<QuickFeedback
+				key="from_airport_success"
+				feedbackContext="from_airport_success"
+				resultStatus="success"
+				direction="from-airport"
+				routeCode={result.options[0]?.routeCode}
+				stopId={result.options[0]?.stopId || result.destination?.placeId}
+			/>
+		</div>
 	);
 }

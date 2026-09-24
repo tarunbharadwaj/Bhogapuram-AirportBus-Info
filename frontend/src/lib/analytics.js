@@ -1,4 +1,4 @@
-const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID?.trim();
+const measurementId = import.meta.env?.VITE_GA_MEASUREMENT_ID?.trim();
 const isAdminPage = () => /^\/service-admin(?:\/|$)/.test(window.location.pathname);
 
 const allowedEvents = new Set([
@@ -24,7 +24,12 @@ const allowedEvents = new Set([
 	'ticketing_link_opened',
 	'live_tracking_opened',
 	'faq_opened',
-	'journey_maps_opened'
+	'journey_maps_opened',
+	'feedback_prompt_shown',
+	'feedback_response',
+	'feedback_reason_selected',
+	'feedback_comment_submitted',
+	'feedback_prompt_dismissed'
 ]);
 
 const allowedParameters = new Set([
@@ -42,7 +47,11 @@ const allowedParameters = new Set([
 	'input_mode',
 	'schedule_view',
 	'link_type',
-	'faq_id'
+	'faq_id',
+	'feedback_rating',
+	'feedback_reason',
+	'feedback_context',
+	'result_status'
 ]);
 
 let initialized = false;
@@ -73,10 +82,8 @@ export const initializeAnalytics = () => {
 	return true;
 };
 
-export const trackEvent = (eventName, parameters = {}) => {
-	if (!initialized || isAdminPage() || !allowedEvents.has(eventName)) return;
-
-	const safeParameters = Object.fromEntries(
+export const sanitizeAnalyticsParameters = (parameters = {}) =>
+	Object.fromEntries(
 		Object.entries(parameters)
 			.filter(
 				([key, value]) =>
@@ -88,6 +95,11 @@ export const trackEvent = (eventName, parameters = {}) => {
 				typeof value === 'string' ? value.slice(0, 100) : value
 			])
 	);
+
+export const trackEvent = (eventName, parameters = {}) => {
+	if (!initialized || isAdminPage() || !allowedEvents.has(eventName)) return;
+
+	const safeParameters = sanitizeAnalyticsParameters(parameters);
 
 	window.gtag?.('event', eventName, safeParameters);
 };

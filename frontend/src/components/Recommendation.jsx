@@ -17,25 +17,33 @@ import {
 	mapsLink,
 	airportNavigationLink
 } from '../lib/format.js';
+import QuickFeedback from './QuickFeedback.jsx';
 
 export default function Recommendation({ result, directionsOrigin }) {
 	if (!result.best)
 		return (
-			<article
-				id="recommendation"
-				className="col-span-full flex gap-4 rounded-3xl bg-[#463026] p-6 text-white shadow-xl motion-safe:animate-[pulse_.35s_ease-out_1]"
-			>
-				<CircleAlert size={26} />
-				<div>
-					<span className="text-xs font-extrabold uppercase tracking-widest text-amber-200">
-						No safe bus found
-					</span>
-					<h2 className="mt-1 text-xl font-bold">
-						Consider an earlier day or another ride.
-					</h2>
-					<p className="mt-1 text-sm text-amber-100/80">{result.warning}</p>
-				</div>
-			</article>
+			<div id="recommendation" className="col-span-full grid gap-4">
+				<article className="flex gap-4 rounded-3xl bg-[#463026] p-6 text-white shadow-xl motion-safe:animate-[pulse_.35s_ease-out_1]">
+					<CircleAlert className="shrink-0" size={26} />
+					<div>
+						<span className="text-xs font-extrabold uppercase tracking-widest text-amber-200">
+							No safe bus found
+						</span>
+						<h2 className="mt-1 text-xl font-bold">
+							Consider an earlier day or another ride.
+						</h2>
+						<p className="mt-1 text-sm text-amber-100/80">{result.warning}</p>
+					</div>
+				</article>
+				<QuickFeedback
+					key="to_airport_unavailable"
+					feedbackContext="to_airport_unavailable"
+					resultStatus="unavailable"
+					direction="to-airport"
+					routeCode={result.nearestStop?.routeCode}
+					stopId={result.nearestStop?.id}
+				/>
+			</div>
 		);
 
 	const isEstimatedStopTime = result.best.stopTimeQuality === 'estimated';
@@ -94,10 +102,8 @@ export default function Recommendation({ result, directionsOrigin }) {
 	];
 
 	return (
-		<article
-			id="recommendation"
-			className="col-span-full rounded-3xl bg-[#122c2b] p-7 text-white shadow-[0_20px_50px_rgba(15,46,44,.2)] max-md:p-5"
-		>
+		<div id="recommendation" className="col-span-full grid gap-4">
+			<article className="rounded-3xl bg-[#122c2b] p-7 text-white shadow-[0_20px_50px_rgba(15,46,44,.2)] max-md:p-5">
 			<div className="flex items-center text-[.68rem] text-teal-100/65">
 				<span className="flex items-center gap-1 font-extrabold uppercase tracking-widest text-teal-200">
 					<Check size={14} /> Best option
@@ -233,6 +239,15 @@ export default function Recommendation({ result, directionsOrigin }) {
 					.
 				</p>
 			)}
-		</article>
+			</article>
+			<QuickFeedback
+				key="to_airport_success"
+				feedbackContext="to_airport_success"
+				resultStatus="success"
+				direction="to-airport"
+				routeCode={result.best.routeCode}
+				stopId={result.best.stopId}
+			/>
+		</div>
 	);
 }

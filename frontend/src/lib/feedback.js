@@ -6,6 +6,35 @@ export const FEEDBACK_CATEGORIES = Object.freeze([
 
 const categoryValues = new Set(FEEDBACK_CATEGORIES.map(({ value }) => value));
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const inlineRatings = new Set(['yes', 'unsure', 'no']);
+const inlineContexts = new Set([
+	'to_airport_success',
+	'to_airport_unavailable',
+	'from_airport_success',
+	'from_airport_unavailable'
+]);
+const directions = new Set(['to-airport', 'from-airport']);
+
+const safeIdentifier = (value, maximumLength = 100) =>
+	typeof value === 'string' && /^[a-z0-9_-]+$/i.test(value)
+		? value.slice(0, maximumLength)
+		: '';
+
+export const inlineFeedbackMetadata = (metadata = {}) => {
+	if (metadata.source !== 'inline-survey') return {};
+	const values = { feedback_source: 'Inline planner survey' };
+	if (inlineRatings.has(metadata.rating)) values.feedback_rating = metadata.rating;
+	if (inlineContexts.has(metadata.context)) values.feedback_context = metadata.context;
+	if (directions.has(metadata.direction)) values.direction = metadata.direction;
+
+	const reason = safeIdentifier(metadata.reason);
+	const routeCode = safeIdentifier(metadata.routeCode, 30);
+	const stopId = safeIdentifier(metadata.stopId);
+	if (reason) values.feedback_reason = reason;
+	if (routeCode) values.route_code = routeCode;
+	if (stopId) values.stop_id = stopId;
+	return values;
+};
 
 export const isValidFeedbackEndpoint = (value) => {
 	try {
@@ -42,7 +71,7 @@ export const validateFeedback = ({ category, message, email }) => {
 
 export const submitFeedback = async (
 	endpoint,
-	{ category, message, email, honey },
+	{ category, message, email = '', honey = '', metadata },
 	fetchImplementation = fetch
 ) => {
 	if (!isValidFeedbackEndpoint(endpoint))
@@ -54,7 +83,11 @@ export const submitFeedback = async (
 	const payload = {
 		category: categoryLabel,
 		message: message.trim(),
-		_subject: 'New Vizag Airport Bus website feedback',
+		...inlineFeedbackMetadata(metadata),
+		_subject:
+			metadata?.source === 'inline-survey'
+				? 'New Vizag Airport Bus inline feedback'
+				: 'New Vizag Airport Bus website feedback',
 		_template: 'table',
 		_captcha: 'false',
 		_honey: honey

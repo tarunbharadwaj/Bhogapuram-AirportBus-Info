@@ -88,6 +88,18 @@ For local development, copy `frontend/.env.example` to `frontend/.env.local` and
 
 Tracked events use route codes, stop IDs, flight type, permission outcomes, and broad accuracy bands only. Precise coordinates and flight departure values are never sent.
 
+The contextual planner survey also sends these custom events:
+
+```text
+feedback_prompt_shown
+feedback_response
+feedback_reason_selected
+feedback_comment_submitted
+feedback_prompt_dismissed
+```
+
+In **GA4 → Admin → Data display → Custom definitions**, create event-scoped custom dimensions for `feedback_rating`, `feedback_reason`, `feedback_context`, and `result_status`. Use **Explore → Free form** to compare response rate, ratings, reasons, direction, and successful versus unavailable planner results. Written comments are never sent to GA4.
+
 ## Website feedback
 
 The public feedback page is available at `/feedback`. It sends feedback directly to the site owner's email through FormSubmit.co and does not use the Render backend.
@@ -100,7 +112,9 @@ VITE_FEEDBACK_FORM_ENDPOINT=https://formsubmit.co/ajax/RANDOM_FORM_TOKEN
 
 The endpoint must use HTTPS and the `formsubmit.co/ajax/` path. Keep the token in Netlify or `frontend/.env.local`; do not commit it. When the variable is absent or invalid, the feedback page remains available but submission is disabled with a friendly message.
 
-Feedback emails contain the selected category, message, and optional reply email. The form intentionally does not collect names, phone numbers, attachments, coordinates, or flight details. GA4 receives only the selected feedback category after a successful submission.
+The main feedback page emails the selected category, message, and optional reply email. Planner results also include an inline three-choice survey. Its ratings and reason categories are sent to GA4, while only optional written comments are emailed. Inline comment emails include the rating, selected reason, result context, direction, route code and stop ID so the report is actionable.
+
+The survey is shown only after a planner result. Dismissal suppresses it for seven days and answering suppresses it for ninety days in that browser. The form intentionally does not collect names, phone numbers, attachments, coordinates, flight details, or selected travel times.
 
 ## Verification
 
