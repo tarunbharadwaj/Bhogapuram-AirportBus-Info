@@ -112,7 +112,7 @@ VITE_FEEDBACK_FORM_ENDPOINT=https://formsubmit.co/ajax/RANDOM_FORM_TOKEN
 
 The endpoint must use HTTPS and the `formsubmit.co/ajax/` path. Keep the token in Netlify or `frontend/.env.local`; do not commit it. When the variable is absent or invalid, the feedback page remains available but submission is disabled with a friendly message.
 
-The main feedback page emails the selected category, message, and optional reply email. Planner results also include an inline three-choice survey. Its ratings and reason categories are sent to GA4, while only optional written comments are emailed. Inline comment emails include the rating, selected reason, result context, direction, route code and stop ID so the report is actionable.
+The main feedback page emails the selected category, message, and required reply email. Planner results also include an inline three-choice survey. Its ratings and reason categories are sent to GA4, while only optional written comments are emailed. Inline comment emails include the rating, selected reason, result context, direction, route code and stop ID so the report is actionable.
 
 The survey is shown only after a planner result. Dismissal suppresses it for seven days and answering suppresses it for ninety days in that browser. The form intentionally does not collect names, phone numbers, attachments, coordinates, flight details, or selected travel times.
 

@@ -3,7 +3,8 @@ import test from 'node:test';
 import { sanitizeAnalyticsParameters } from '../src/lib/analytics.js';
 import {
 	inlineFeedbackMetadata,
-	submitFeedback
+	submitFeedback,
+	validateFeedback
 } from '../src/lib/feedback.js';
 import {
 	ANSWERED_COOLDOWN_MS,
@@ -30,6 +31,33 @@ class MemoryStorage {
 const freshStorage = () => ({
 	localStorage: new MemoryStorage(),
 	sessionStorage: new MemoryStorage()
+});
+
+test('requires a valid email on the full feedback form', () => {
+	assert.deepEqual(
+		validateFeedback({
+			category: 'feedback',
+			message: 'This is useful feedback.',
+			email: ''
+		}),
+		{ email: 'Enter your email address.' }
+	);
+	assert.deepEqual(
+		validateFeedback({
+			category: 'feedback',
+			message: 'This is useful feedback.',
+			email: 'not-an-email'
+		}),
+		{ email: 'Enter a valid email address.' }
+	);
+	assert.deepEqual(
+		validateFeedback({
+			category: 'feedback',
+			message: 'This is useful feedback.',
+			email: 'person@example.com'
+		}),
+		{}
+	);
 });
 
 test('shows feedback once in a browser session', () => {

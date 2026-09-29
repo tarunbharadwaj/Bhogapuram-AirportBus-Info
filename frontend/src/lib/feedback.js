@@ -63,8 +63,9 @@ export const validateFeedback = ({ category, message, email }) => {
 		errors.message = 'Please enter at least 10 characters.';
 	else if (trimmedMessage.length > 2000)
 		errors.message = 'Please keep your message within 2,000 characters.';
-	if (trimmedEmail && !emailPattern.test(trimmedEmail))
-		errors.email = 'Enter a valid email address or leave this field empty.';
+	if (!trimmedEmail) errors.email = 'Enter your email address.';
+	else if (!emailPattern.test(trimmedEmail))
+		errors.email = 'Enter a valid email address.';
 
 	return errors;
 };

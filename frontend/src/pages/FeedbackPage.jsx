@@ -225,7 +225,7 @@ export default function FeedbackPage() {
 									className="mt-6 block text-sm font-bold"
 									htmlFor="feedback-email"
 								>
-									Email <span className="font-normal text-muted">(optional)</span>
+									Email <span className="text-red-600 dark:text-red-300" aria-hidden="true">*</span>
 									<div className="relative">
 										<Mail
 											className="pointer-events-none absolute top-1/2 left-4 mt-1 -translate-y-1/2 text-slate-400"
@@ -237,6 +237,7 @@ export default function FeedbackPage() {
 											id="feedback-email"
 											name="email"
 											type="email"
+											required
 											inputMode="email"
 											autoComplete="email"
 											value={form.email}
@@ -252,7 +253,7 @@ export default function FeedbackPage() {
 									className={`mt-2 text-[.68rem] ${errors.email ? 'text-red-600 dark:text-red-300' : 'text-muted'}`}
 									id="email-help"
 								>
-									{errors.email || 'Only provide this if you would like a reply.'}
+									{errors.email || 'Required so we can reply to your feedback if needed.'}
 								</p>
 
 								<label className="hidden" aria-hidden="true">
