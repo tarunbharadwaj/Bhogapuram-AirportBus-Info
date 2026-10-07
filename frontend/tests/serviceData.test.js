@@ -61,7 +61,7 @@ test('contains the revised stops and fares', () => {
 		[
 			['Old Gajuwaka', 400], ['Scindia', 400], ['Kancharapalem', 400],
 			['Railway Station', 300], ['RTC Complex', 350], ['Siripuram', 350],
-			['Opposite VUDA Park', 300], ['ISKCON Temple', 300], ['IT Hills', 250],
+			['Opposite VUDA Park', 350], ['ISKCON Temple', 300], ['IT Hills', 250],
 			['Marikavalasa', 200], ['Anandapuram', 150],
 			['Tagarapuvalasa', 100], ['Airport Junction', 50]
 		]
@@ -185,7 +185,8 @@ test('selects Opposite VUDA Park as an active ASR-2 boarding point', () => {
 	assert.equal(nearest.placeId, 'vuda-park');
 	assert.equal(nearest.stop.id, 'vuda-park-stop');
 	assert.deepEqual(nearest.routeCodes, ['ASR-2']);
-	assert.equal(nearest.stop.fare, 300);
+	assert.equal(nearest.stop.fare, 350);
+	assert.match(nearest.stop.landmark, /Ticket name: Siripuram/);
 });
 
 test('plans directly from a manually selected stop without location coverage checks', () => {

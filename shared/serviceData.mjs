@@ -347,11 +347,11 @@ export const DEFAULT_SERVICE_DATA = {
 					id: 'vuda-park-stop',
 					placeId: 'vuda-park',
 					name: 'Opposite VUDA Park',
-					landmark: 'Opposite VUDA Park APSRTC bus stop',
+					landmark: 'Opposite VUDA Park APSRTC bus stop · Ticket name: Siripuram',
 					coordinateQuality: 'user-provided-mapped-stop',
 					lat: 17.723734,
 					lng: 83.337496,
-					fare: 300
+					fare: 350
 				},
 				{
 					id: 'iskcon-temple-stop',
