@@ -8,7 +8,7 @@ import {
 	MapPin,
 	ShieldCheck
 } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
 	getAirportDepartureOptions,
 	getAirportDestinations,
@@ -18,6 +18,7 @@ import {
 } from '../../../shared/airportDepartures.mjs';
 import { trackEvent } from '../lib/analytics.js';
 import { api } from '../lib/api.js';
+import { openDatePickerFromInput } from '../lib/datePicker.js';
 import AirportDepartureOptions from './AirportDepartureOptions.jsx';
 import PlannerDirectionSwitch from './PlannerDirectionSwitch.jsx';
 
@@ -50,7 +51,6 @@ export default function FromAirportPlanner({
 	onDirectionChange
 }) {
 	const destinations = useMemo(() => getAirportDestinations(service), [service]);
-	const dateInputRef = useRef(null);
 	const [destinationPlaceId, setDestinationPlaceId] = useState('');
 	const [readyAt, setReadyAt] = useState(() => readyPartsFrom(nextQuarterHour()));
 	const [loading, setLoading] = useState(false);
@@ -76,21 +76,6 @@ export default function FromAirportPlanner({
 		setDestinationPlaceId(value);
 		setResult(null);
 		setError('');
-	};
-
-	const openDatePicker = () => {
-		const input = dateInputRef.current;
-		if (!input) return;
-		try {
-			if (typeof input.showPicker === 'function') input.showPicker();
-			else {
-				input.focus();
-				input.click();
-			}
-		} catch {
-			input.focus();
-			input.click();
-		}
 	};
 
 	const submit = async (event) => {
@@ -218,24 +203,21 @@ export default function FromAirportPlanner({
 						<span className="text-[.62rem] font-bold tracking-wide text-muted">
 							Travel date
 						</span>
-						<button
-							type="button"
-							className="relative z-10 mt-1 flex min-h-7 items-center gap-2 text-left text-[.95rem] font-bold tracking-[-.01em] text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand/45"
-							aria-label={`Choose travel date. Selected date ${displayDateValue(readyAt.date)}`}
-							onClick={openDatePicker}
+						<div
+							className="mt-1 flex min-h-7 items-center gap-2 text-left text-[.95rem] font-bold tracking-[-.01em] text-ink"
+							aria-hidden="true"
 						>
 							<CalendarDays size={17} className="shrink-0 text-slate-400" />
 							<span>{displayDateValue(readyAt.date)}</span>
-						</button>
+						</div>
 						<input
-							ref={dateInputRef}
 							id="return-date"
-							className="pointer-events-none absolute inset-0 size-full opacity-0"
+							className="absolute inset-0 z-10 size-full cursor-pointer opacity-0"
 							type="date"
-							tabIndex={-1}
-							aria-label="Airport departure travel date"
+							aria-label={`Airport departure travel date. Selected date ${displayDateValue(readyAt.date)}`}
 							min={indiaDateValue(new Date())}
 							value={readyAt.date}
+							onClick={openDatePickerFromInput}
 							onChange={(event) => updateReadyAt('date', event.target.value)}
 							required
 						/>

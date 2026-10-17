@@ -148,7 +148,7 @@ export default function Recommendation({ result, directionsOrigin }) {
 				<p className="mb-4 flex items-start gap-2 rounded-xl bg-white/6 p-3 text-xs leading-relaxed text-teal-100/70">
 					<CircleAlert className="mt-0.5 shrink-0" size={15} /> Intermediate stop
 					times are calculated estimates, not live arrivals. Arrive 10-15 minutes
-					early and use APSRTC Live Track when available.
+					early.
 				</p>
 			)}
 

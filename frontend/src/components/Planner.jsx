@@ -23,6 +23,7 @@ import {
 import { getActiveBoardingPlaces } from '../../../shared/serviceRouting.mjs';
 import { trackEvent } from '../lib/analytics.js';
 import { api } from '../lib/api.js';
+import { openDatePickerFromInput } from '../lib/datePicker.js';
 import { mapsLink } from '../lib/format.js';
 import { findNearestBoardingPoint } from '../lib/nearestStop.js';
 import { recommendTrip } from '../lib/recommendTrip.js';
@@ -61,7 +62,6 @@ const currentMinute = () => {
 
 export default function Planner({ service, backendReady }) {
 	const [tripDirection, setTripDirection] = useState('to-airport');
-	const flightDateInputRef = useRef(null);
 	const autoLocateAttempted = useRef(false);
 	const [startMode, setStartMode] = useState('');
 	const [coordinates, setCoordinates] = useState(null);
@@ -106,21 +106,6 @@ export default function Planner({ service, backendReady }) {
 
 		setFlightDeparture(next);
 		setError('');
-	};
-
-	const openFlightDatePicker = () => {
-		const input = flightDateInputRef.current;
-		if (!input) return;
-		try {
-			if (typeof input.showPicker === 'function') input.showPicker();
-			else {
-				input.focus();
-				input.click();
-			}
-		} catch {
-			input.focus();
-			input.click();
-		}
 	};
 
 	const locate = useCallback(
@@ -621,11 +606,9 @@ export default function Planner({ service, backendReady }) {
 						<span className="text-[.62rem] font-bold tracking-wide text-muted">
 							Travel date
 						</span>
-						<button
-							type="button"
-							className="relative z-10 mt-1 flex min-h-7 items-center gap-2 text-left text-[.95rem] font-bold tracking-[-.01em] text-ink outline-none focus-visible:ring-2 focus-visible:ring-brand/45"
-							aria-label={`Choose travel date. Selected date ${displayDateValue(flightDeparture.date)}`}
-							onClick={openFlightDatePicker}
+						<div
+							className="mt-1 flex min-h-7 items-center gap-2 text-left text-[.95rem] font-bold tracking-[-.01em] text-ink"
+							aria-hidden="true"
 						>
 							<CalendarDays
 								size={17}
@@ -633,16 +616,15 @@ export default function Planner({ service, backendReady }) {
 								aria-hidden="true"
 							/>
 							<span>{displayDateValue(flightDeparture.date)}</span>
-						</button>
+						</div>
 						<input
-							ref={flightDateInputRef}
 							id="flight-date"
-							className="pointer-events-none absolute inset-0 size-full opacity-0"
+							className="absolute inset-0 z-10 size-full cursor-pointer opacity-0"
 							type="date"
-							tabIndex={-1}
-							aria-label="Flight travel date"
+							aria-label={`Flight travel date. Selected date ${displayDateValue(flightDeparture.date)}`}
 							min={indiaDateValue()}
 							value={flightDeparture.date}
+							onClick={openDatePickerFromInput}
 							onChange={(event) => changeDeparture('date', event.target.value)}
 							required
 						/>
