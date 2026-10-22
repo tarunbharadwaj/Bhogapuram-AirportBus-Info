@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
 	DEFAULT_DATA,
+	DEFAULT_MONTHLY_PASSES,
 	DEFAULT_TICKETING,
 	SERVICE_DATA_SCHEMA_VERSION,
 	createDefaultServiceData
@@ -66,6 +67,36 @@ export class ServiceModel {
 		};
 		if (!['unverified', 'available', 'unavailable'].includes(next.ticketing.onlineBookingStatus))
 			next.ticketing.onlineBookingStatus = DEFAULT_TICKETING.onlineBookingStatus;
+		const monthlyPasses =
+			next.monthlyPasses && typeof next.monthlyPasses === 'object'
+				? next.monthlyPasses
+				: {};
+		const counterDaysAreValid =
+			Array.isArray(monthlyPasses.airportCounterDays) &&
+			monthlyPasses.airportCounterDays.length > 0 &&
+			monthlyPasses.airportCounterDays.every(
+				(day) => Number.isInteger(Number(day)) && Number(day) >= 1 && Number(day) <= 31
+			);
+		const passFaresAreValid =
+			Array.isArray(monthlyPasses.fares) &&
+			monthlyPasses.fares.length > 0 &&
+			monthlyPasses.fares.every(
+				(fare) =>
+					typeof fare?.id === 'string' &&
+					typeof fare?.label === 'string' &&
+					Number.isFinite(Number(fare?.amount)) &&
+					Number(fare.amount) >= 0
+			);
+		next.monthlyPasses = {
+			...clone(DEFAULT_MONTHLY_PASSES),
+			...monthlyPasses,
+			airportCounterDays: counterDaysAreValid
+				? monthlyPasses.airportCounterDays.map(Number)
+				: clone(DEFAULT_MONTHLY_PASSES.airportCounterDays),
+			fares: passFaresAreValid
+				? monthlyPasses.fares.map((fare) => ({ ...fare, amount: Number(fare.amount) }))
+				: clone(DEFAULT_MONTHLY_PASSES.fares)
+		};
 		next.schemaVersion = SERVICE_DATA_SCHEMA_VERSION;
 
 		for (const route of next.routes) {

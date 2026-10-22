@@ -69,6 +69,28 @@ test('contains the revised stops and fares', () => {
 	assert.equal(route('ASR-1').stops.some((stop) => stop.name === 'Madhurawada'), false);
 });
 
+test('contains the published monthly pass information', () => {
+	assert.equal(DEFAULT_SERVICE_DATA.schemaVersion, 7);
+	assert.equal(DEFAULT_SERVICE_DATA.monthlyPasses.validityDays, 30);
+	assert.equal(DEFAULT_SERVICE_DATA.monthlyPasses.fareBasisDays, 10);
+	assert.deepEqual(DEFAULT_SERVICE_DATA.monthlyPasses.airportCounterDays, [10, 11, 12]);
+	assert.deepEqual(
+		DEFAULT_SERVICE_DATA.monthlyPasses.fares.map(({ label, amount }) => [label, amount]),
+		[
+			['General Pass', 7060],
+			['Gurudwara', 6060],
+			['ISKCON', 6060],
+			['Zoo Park', 5060],
+			['VUDA Park', 5060],
+			['Marikavalasa', 4060],
+			['Anandapuram', 3060],
+			['Tagarapuvalasa', 2060],
+			['Airport Junction', 1060]
+		]
+	);
+	assert.deepEqual(FALLBACK_SERVICE.monthlyPasses, DEFAULT_SERVICE_DATA.monthlyPasses);
+});
+
 test('keeps published origin times exact and marks intermediate pins and times', () => {
 	for (const item of DEFAULT_SERVICE_DATA.routes) {
 		assert.deepEqual(item.times, item.timetables.toAirport);

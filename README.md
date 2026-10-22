@@ -59,9 +59,9 @@ Admin changes are saved to `backend/data/service-data.json`. The editor supports
 
 On Render's free service, this file is stored on an ephemeral filesystem. Admin edits can disappear after a restart or redeploy, so they must not be treated as permanent production data.
 
-## Service and ticketing data
+## Service, ticketing and monthly-pass data
 
-Canonical route and ticketing information lives in `shared/serviceData.mjs`. The current ticketing status records that AeroExpress tickets are not sold online and must be purchased from the conductor onboard. To change a ticketing status, message, URL, or `checkedDate`, edit the source-controlled `DEFAULT_TICKETING` object, commit the change, and redeploy both applications.
+Canonical route, ticketing and monthly-pass information lives in `shared/serviceData.mjs`. The current ticketing status records that AeroExpress single-journey tickets are not sold online and must be purchased from the conductor onboard. Monthly-pass prices, counter dates and verification details are stored separately in the source-controlled `DEFAULT_MONTHLY_PASSES` object and displayed in the FAQ. To change either dataset, edit its shared default object, commit the change, and redeploy both applications.
 
 The public planner supports either browser location or a manually selected active bus stop. Intermediate stop times are estimates marked with `~`; route-origin departures remain published times. The timetable defaults to the next five services and includes a full-daily-schedule view for planning ahead.
 

@@ -13,9 +13,38 @@ import {
 } from 'lucide-react';
 import Brand from './Brand.jsx';
 import { trackEvent } from '../lib/analytics.js';
-import { DEFAULT_TICKETING } from '../../../shared/serviceData.mjs';
+import {
+	DEFAULT_MONTHLY_PASSES,
+	DEFAULT_TICKETING
+} from '../../../shared/serviceData.mjs';
 
 const fallbackTicketing = DEFAULT_TICKETING;
+const fallbackMonthlyPasses = DEFAULT_MONTHLY_PASSES;
+
+const rupees = new Intl.NumberFormat('en-IN', {
+	style: 'currency',
+	currency: 'INR',
+	maximumFractionDigits: 0
+});
+
+const ordinal = (value) => {
+	const remainder = value % 100;
+	if (remainder >= 11 && remainder <= 13) return `${value}th`;
+	const suffix =
+		value % 10 === 1
+			? 'st'
+			: value % 10 === 2
+				? 'nd'
+				: value % 10 === 3
+					? 'rd'
+					: 'th';
+	return `${value}${suffix}`;
+};
+
+const readableList = (values) => {
+	if (values.length < 2) return values[0] || '';
+	return `${values.slice(0, -1).join(', ')} and ${values.at(-1)}`;
+};
 
 export function QuickFacts({ service }) {
 	const minFare = Math.min(
@@ -108,6 +137,10 @@ const faqItems = [
 			'AeroExpress tickets cannot currently be purchased online. Board the bus and buy your ticket directly from the conductor.'
 	},
 	{
+		id: 'monthly-passes',
+		question: 'Are monthly AeroExpress passes available?'
+	},
+	{
 		id: 'tomorrow-buses',
 		question: 'How can I see tomorrow’s early buses?',
 		answer:
@@ -115,8 +148,86 @@ const faqItems = [
 	}
 ];
 
-export function FAQ({ ticketing = fallbackTicketing }) {
+function MonthlyPassAnswer({ info }) {
+	if (!info.available)
+		return (
+			<p className="border-t border-slate-200 py-4 pl-8 text-xs leading-6 text-muted dark:border-white/10 max-sm:pl-0">
+				Monthly AeroExpress pass availability is currently unconfirmed. Please check
+				with APSRTC before travelling.
+			</p>
+		);
+
+	const counterDays = readableList(
+		info.airportCounterDays.map((day) => ordinal(Number(day)))
+	);
+
+	return (
+		<div className="border-t border-slate-200 py-5 pl-8 text-xs leading-6 text-muted dark:border-white/10 max-sm:pl-0">
+			<p>
+				Yes. The monthly pass provides {info.validityDays} days of AeroExpress
+				travel for approximately {info.fareBasisDays} days&apos; fare.
+			</p>
+
+			<div className="mt-4 rounded-2xl bg-brand-soft p-4 text-ink dark:bg-brand/10 dark:text-slate-100">
+				<strong className="block text-sm">Where to get a pass</strong>
+				<ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5">
+					<li>{info.citySalesLocation}.</li>
+					<li>
+						{info.airportCounterLocation}: passes are issued on the {counterDays} of
+						every month.
+					</li>
+				</ul>
+			</div>
+
+			<h3 className="mt-5 text-sm font-bold text-ink dark:text-white">
+				Monthly pass fares
+			</h3>
+			<dl
+				className="mt-3 grid grid-cols-2 gap-2 max-sm:grid-cols-1"
+				aria-label="AeroExpress monthly pass fares"
+			>
+				{info.fares.map((fare) => (
+					<div
+						className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white/70 px-3 py-2.5 dark:border-white/10 dark:bg-white/5"
+						key={fare.id}
+					>
+						<dt className="font-semibold text-ink dark:text-slate-100">{fare.label}</dt>
+						<dd className="shrink-0 font-extrabold text-brand">
+							{rupees.format(fare.amount)}
+						</dd>
+					</div>
+				))}
+			</dl>
+
+			<p className="mt-4">
+				Specific city counters, opening hours, required documents, activation date and
+				eligibility have not been verified. Confirm the current amount and requirements
+				at the issuing counter.
+			</p>
+			<p className="mt-2">
+				Monthly passes are counter-issued and separate from single-journey tickets,
+				which are purchased onboard from the conductor.
+			</p>
+		</div>
+	);
+}
+
+export function FAQ({
+	ticketing = fallbackTicketing,
+	monthlyPasses = fallbackMonthlyPasses
+}) {
 	const info = { ...fallbackTicketing, ...ticketing };
+	const providedPasses = monthlyPasses || {};
+	const passInfo = {
+		...fallbackMonthlyPasses,
+		...providedPasses,
+		airportCounterDays: Array.isArray(providedPasses.airportCounterDays)
+			? providedPasses.airportCounterDays
+			: fallbackMonthlyPasses.airportCounterDays,
+		fares: Array.isArray(providedPasses.fares) && providedPasses.fares.length
+			? providedPasses.fares
+			: fallbackMonthlyPasses.fares
+	};
 	return (
 		<section
 			className="mx-auto max-w-5xl px-6 pt-28 max-md:px-4 max-md:pt-20"
@@ -154,9 +265,13 @@ export function FAQ({ ticketing = fallbackTicketing }) {
 								+
 							</span>
 						</summary>
-						<p className="border-t border-slate-200 py-4 pl-8 text-xs leading-6 text-muted dark:border-white/10">
-							{item.id === 'ticket-availability' ? info.message : item.answer}
-						</p>
+						{item.id === 'monthly-passes' ? (
+							<MonthlyPassAnswer info={passInfo} />
+						) : (
+							<p className="border-t border-slate-200 py-4 pl-8 text-xs leading-6 text-muted dark:border-white/10 max-sm:pl-0">
+								{item.id === 'ticket-availability' ? info.message : item.answer}
+							</p>
+						)}
 					</details>
 				))}
 			</div>

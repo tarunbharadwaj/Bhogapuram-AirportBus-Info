@@ -3,6 +3,13 @@ import { useState } from 'react';
 import Brand from './Brand.jsx';
 import ThemeToggle from './ThemeToggle.jsx';
 
+const sectionLinks = [
+	{ label: 'Plan a trip', id: 'planner' },
+	{ label: 'Timetables', id: 'timetables' },
+	{ label: 'Routes & stops', id: 'routes' },
+	{ label: 'FAQ', id: 'faq' }
+];
+
 export default function Header() {
 	const [open, setOpen] = useState(false);
 	const navigate = (id) => {
@@ -24,11 +31,11 @@ export default function Header() {
 				</button>
 			</div>
 			<nav className={navClass} aria-label="Main navigation">
-				{['Plan a trip', 'Timetables', 'Routes & stops'].map((label, index) => (
+				{sectionLinks.map(({ label, id }) => (
 					<button
 						key={label}
 						className="rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white dark:hover:bg-white/8 max-md:text-left"
-						onClick={() => navigate(['planner', 'timetables', 'routes'][index])}
+						onClick={() => navigate(id)}
 					>
 						{label}
 					</button>

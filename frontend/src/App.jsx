@@ -6,7 +6,7 @@ import HomePage from './pages/HomePage.jsx';
 import { LoadingScreen } from './components/SiteSections.jsx';
 import { FALLBACK_SERVICE } from './data/fallbackService.js';
 
-const SERVICE_CACHE_KEY = 'bhogapuram-service-cache-v6';
+const SERVICE_CACHE_KEY = 'bhogapuram-service-cache-v7';
 const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
 const isAdminPage = currentPath === '/service-admin';
 const isFeedbackPage = currentPath === '/feedback';
@@ -21,13 +21,29 @@ const isServiceData = (value) =>
 			Array.isArray(value.locations)
 	);
 
-const withServiceDefaults = (value) => ({
-	...value,
-	ticketing: {
-		...FALLBACK_SERVICE.ticketing,
-		...(value?.ticketing || {})
-	}
-});
+const withServiceDefaults = (value) => {
+	const monthlyPasses =
+		value?.monthlyPasses && typeof value.monthlyPasses === 'object'
+			? value.monthlyPasses
+			: {};
+	return {
+		...value,
+		ticketing: {
+			...FALLBACK_SERVICE.ticketing,
+			...(value?.ticketing || {})
+		},
+		monthlyPasses: {
+			...FALLBACK_SERVICE.monthlyPasses,
+			...monthlyPasses,
+			airportCounterDays: Array.isArray(monthlyPasses.airportCounterDays)
+				? monthlyPasses.airportCounterDays
+				: FALLBACK_SERVICE.monthlyPasses.airportCounterDays,
+			fares: Array.isArray(monthlyPasses.fares) && monthlyPasses.fares.length
+				? monthlyPasses.fares
+				: FALLBACK_SERVICE.monthlyPasses.fares
+		}
+	};
+};
 
 const initialPublicService = () => {
 	try {

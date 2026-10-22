@@ -2,7 +2,7 @@ import { haversineKm } from './serviceRouting.mjs';
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
-export const SERVICE_DATA_SCHEMA_VERSION = 6;
+export const SERVICE_DATA_SCHEMA_VERSION = 7;
 
 export const DEFAULT_TICKETING = {
 	onlineBookingStatus: 'unavailable',
@@ -12,6 +12,27 @@ export const DEFAULT_TICKETING = {
 	bookingUrl: 'https://www.apsrtconline.in/oprs-web/',
 	trackingUrl: 'https://apsrtclivetrack.com/',
 	checkedDate: '2026-09-07'
+};
+
+export const DEFAULT_MONTHLY_PASSES = {
+	available: true,
+	checkedDate: '2026-10-12',
+	validityDays: 30,
+	fareBasisDays: 10,
+	citySalesLocation: 'City bus stations',
+	airportCounterLocation: 'Airport arrivals block',
+	airportCounterDays: [10, 11, 12],
+	fares: [
+		{ id: 'general', label: 'General Pass', amount: 7060 },
+		{ id: 'gurudwara', label: 'Gurudwara', amount: 6060 },
+		{ id: 'iskcon', label: 'ISKCON', amount: 6060 },
+		{ id: 'zoo-park', label: 'Zoo Park', amount: 5060 },
+		{ id: 'vuda-park', label: 'VUDA Park', amount: 5060 },
+		{ id: 'marikavalasa', label: 'Marikavalasa', amount: 4060 },
+		{ id: 'anandapuram', label: 'Anandapuram', amount: 3060 },
+		{ id: 'tagarapuvalasa', label: 'Tagarapuvalasa', amount: 2060 },
+		{ id: 'airport-junction', label: 'Airport Junction', amount: 1060 }
+	]
 };
 
 export const AIRPORT = {
@@ -153,6 +174,7 @@ const route = ({ timetables, estimatedJourneyMinutes, stops, ...details }) => ({
 export const DEFAULT_SERVICE_DATA = {
 	schemaVersion: SERVICE_DATA_SCHEMA_VERSION,
 	ticketing: clone(DEFAULT_TICKETING),
+	monthlyPasses: clone(DEFAULT_MONTHLY_PASSES),
 	status: {
 		verifiedDate: '2026-08-17',
 		announcement:

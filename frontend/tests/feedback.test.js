@@ -221,3 +221,15 @@ test('analytics removes comments, contact details, coordinates and travel times'
 		}
 	);
 });
+
+test('monthly pass FAQ analytics keeps only its privacy-safe identifier', () => {
+	assert.deepEqual(
+		sanitizeAnalyticsParameters({
+			faq_id: 'monthly-passes',
+			pass_amount: 7060,
+			counter_date: '2026-11-10',
+			contact: 'private'
+		}),
+		{ faq_id: 'monthly-passes' }
+	);
+});

@@ -20,7 +20,10 @@ export default function HomePage({ service, backendReady }) {
 				{/* <QuickFacts service={service} /> */}
 				<Timetable service={service} />
 				<Routes service={service} />
-				<FAQ ticketing={service.ticketing} />
+				<FAQ
+					ticketing={service.ticketing}
+					monthlyPasses={service.monthlyPasses}
+				/>
 				<Confidence />
 			</main>
 			<Footer ticketing={service.ticketing} />

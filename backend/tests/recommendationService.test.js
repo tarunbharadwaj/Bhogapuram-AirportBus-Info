@@ -58,10 +58,12 @@ test('normalizes irregular directional timetables and rejects invalid times', (c
   context.after(() => fs.rmSync(directory, { recursive: true, force: true }));
   const model = new ServiceModel(dataFile);
   const draft = structuredClone(DEFAULT_DATA);
+	delete draft.monthlyPasses;
   draft.routes[0].timetables.toAirport = ['18:00', '04:15', '18:00'];
   const saved = model.replace(draft);
   assert.deepEqual(saved.routes[0].timetables.toAirport, ['04:15', '18:00', '18:00']);
   assert.deepEqual(saved.routes[0].times, saved.routes[0].timetables.toAirport);
+	assert.equal(saved.monthlyPasses.fares.length, 9);
 
   const invalid = structuredClone(saved);
   invalid.routes[0].timetables.fromAirport = ['24:10'];
@@ -77,11 +79,13 @@ test('migrates legacy saved data while preserving public status settings', (cont
     routes: [],
   }));
   const model = new ServiceModel(dataFile);
-  assert.equal(model.getAll().schemaVersion, 6);
+  assert.equal(model.getAll().schemaVersion, 7);
   assert.equal(model.getAll().status.announcementVisible, false);
   assert.equal(model.getAll().status.announcement, 'Saved status');
   assert.equal(model.getAll().routes[0].timetables.toAirport[0], '04:15');
   assert.equal(model.getAll().ticketing.onlineBookingStatus, 'unavailable');
+	assert.deepEqual(model.getAll().monthlyPasses.airportCounterDays, [10, 11, 12]);
+	assert.equal(model.getAll().monthlyPasses.fares[0].amount, 7060);
 });
 
 test('serves the requested timetable direction through the API controller', () => {
