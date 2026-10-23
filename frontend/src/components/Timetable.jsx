@@ -106,23 +106,6 @@ export default function Timetable({ service }) {
 			<div className="adaptive-material grid min-h-96 grid-cols-[18rem_1fr] overflow-hidden rounded-3xl border border-white bg-white/80 shadow-[0_18px_55px_rgba(22,44,58,.08)] backdrop-blur-xl transition-colors duration-300 dark:border-white/10 dark:bg-slate-900/85 dark:shadow-[0_20px_55px_rgba(0,0,0,.28)] max-md:grid-cols-1">
 				<div className="border-r border-slate-200 bg-slate-100 p-5 dark:border-white/10 dark:bg-white/4 max-md:border-r-0 max-md:border-b">
 					<div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-200 p-1 dark:bg-white/8">
-						{activeRoutes.map((item) => (
-							<button
-								key={item.id}
-								type="button"
-								aria-pressed={routeId === item.id}
-								className={toggle(routeId === item.id)}
-								onClick={() => setRouteId(item.id)}
-							>
-								<span
-									className="mr-2 inline-block size-2 rounded-full"
-									style={{ background: item.color }}
-								/>
-								{item.code}
-							</button>
-						))}
-					</div>
-					<div className="mt-3 grid grid-cols-2 gap-1 rounded-xl bg-slate-200 p-1 dark:bg-white/8">
 						<button
 							type="button"
 							aria-pressed={direction === 'to-airport'}
@@ -140,6 +123,27 @@ export default function Timetable({ service }) {
 							Airport → City
 						</button>
 					</div>
+					<label className="mt-5 block text-xs font-bold text-muted">
+						{direction === 'to-airport' ? 'Boarding point' : 'Destination'}
+						<div className="relative mt-2 flex h-12 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 dark:border-white/10 dark:bg-white/6">
+							<MapPin size={18} className="text-muted" />
+							<select
+								className="w-full appearance-none bg-transparent pr-6 text-sm font-semibold outline-none"
+								value={stopId}
+								onChange={(event) => setStopId(event.target.value)}
+							>
+								{route.stops.map((stop) => (
+									<option key={stop.id} value={stop.id}>
+										{stop.name}
+									</option>
+								))}
+							</select>
+							<ChevronDown
+								size={16}
+								className="pointer-events-none absolute right-3"
+							/>
+						</div>
+					</label>
 					<div
 						className="mt-3 grid grid-cols-2 gap-1 rounded-xl bg-slate-200 p-1 dark:bg-white/8"
 						role="group"
@@ -162,27 +166,23 @@ export default function Timetable({ service }) {
 							Full daily schedule
 						</button>
 					</div>
-					<label className="mt-6 block text-xs font-bold text-muted">
-						{direction === 'to-airport' ? 'Boarding point' : 'Destination'}
-						<div className="relative mt-2 flex h-12 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 dark:border-white/10 dark:bg-white/6">
-							<MapPin size={18} className="text-muted" />
-							<select
-								className="w-full appearance-none bg-transparent pr-6 text-sm font-semibold outline-none"
-								value={stopId}
-								onChange={(event) => setStopId(event.target.value)}
+					<div className="mt-3 grid grid-cols-2 gap-1 rounded-xl bg-slate-200 p-1 dark:bg-white/8">
+						{activeRoutes.map((item) => (
+							<button
+								key={item.id}
+								type="button"
+								aria-pressed={routeId === item.id}
+								className={toggle(routeId === item.id)}
+								onClick={() => setRouteId(item.id)}
 							>
-								{route.stops.map((stop) => (
-									<option key={stop.id} value={stop.id}>
-										{stop.name}
-									</option>
-								))}
-							</select>
-							<ChevronDown
-								size={16}
-								className="pointer-events-none absolute right-3"
-							/>
-						</div>
-					</label>
+								<span
+									className="mr-2 inline-block size-2 rounded-full"
+									style={{ background: item.color }}
+								/>
+								{item.code}
+							</button>
+						))}
+					</div>
 				</div>
 				<div className="p-6 max-md:p-4">
 					<div className="grid grid-cols-2 pb-3 pl-12 text-[.68rem] font-bold text-slate-400">
