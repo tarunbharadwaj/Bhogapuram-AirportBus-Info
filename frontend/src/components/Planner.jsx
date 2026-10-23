@@ -26,7 +26,10 @@ import { api } from '../lib/api.js';
 import { openDatePickerFromInput } from '../lib/datePicker.js';
 import { mapsLink } from '../lib/format.js';
 import { findNearestBoardingPoint } from '../lib/nearestStop.js';
-import { recommendTrip } from '../lib/recommendTrip.js';
+import {
+	recommendTrip,
+	reconcileRecommendation
+} from '../lib/recommendTrip.js';
 import FromAirportPlanner from './FromAirportPlanner.jsx';
 import BoardingStopPicker from './BoardingStopPicker.jsx';
 import PlannerDirectionSwitch from './PlannerDirectionSwitch.jsx';
@@ -334,7 +337,16 @@ export default function Planner({ service, backendReady }) {
 			};
 			const recommendation = recommendTrip(service, request);
 			setResult(recommendation);
-			if (recommendation.best) {
+			if (
+				recommendation.best &&
+				recommendation.resultType === 'previous-night-only'
+			) {
+				trackEvent('overnight_option_shown', {
+					route_code: recommendation.best.routeCode,
+					stop_id: recommendation.best.stopId,
+					flight_type: recommendation.flightType
+				});
+			} else if (recommendation.best) {
 				trackEvent('plan_generated', {
 					route_code: recommendation.best.routeCode,
 					stop_id: recommendation.best.stopId,
@@ -352,7 +364,11 @@ export default function Planner({ service, backendReady }) {
 					method: 'POST',
 					body: JSON.stringify(request)
 				})
-					.then(setResult)
+					.then((serverRecommendation) =>
+						setResult(
+							reconcileRecommendation(recommendation, serverRecommendation)
+						)
+					)
 					.catch(() => {});
 			}
 			requestAnimationFrame(() =>

@@ -88,8 +88,56 @@ export const recommendTrip = (service, input) => {
 	const safeServices = services.filter(
 		(serviceOption) => new Date(serviceOption.airportArrivalTime) <= airportBy
 	);
-	const best = safeServices.at(-1) || null;
-	const earlier = safeServices.at(-2) || null;
+	const flightDateValue = indiaDateValue(flightTime);
+	const calendarRelation = (serviceOption) => {
+		const departureDateValue = indiaDateValue(serviceOption.departureTime);
+		if (departureDateValue === flightDateValue) return 'same-day';
+		return departureDateValue < flightDateValue ? 'previous-day' : 'later-day';
+	};
+	const safeSameDayServices = safeServices.filter(
+		(serviceOption) => calendarRelation(serviceOption) === 'same-day'
+	);
+	const safePreviousDayServices = safeServices.filter(
+		(serviceOption) => calendarRelation(serviceOption) === 'previous-day'
+	);
+	const best =
+		safeSameDayServices.at(-1) || safePreviousDayServices.at(-1) || null;
+	const resultType = best
+		? calendarRelation(best) === 'same-day'
+			? 'same-day-safe'
+			: 'previous-night-only'
+		: 'no-safe-bus';
+	const earlier = best
+		? safeServices.filter(
+				(serviceOption) =>
+					new Date(serviceOption.departureTime) < new Date(best.departureTime)
+			).at(-1) || null
+		: null;
+	const firstSameDayBeforeFlight = services.find(
+		(serviceOption) =>
+			calendarRelation(serviceOption) === 'same-day' &&
+			new Date(serviceOption.airportArrivalTime) < flightTime
+	);
+	const sameDayAlternative =
+		resultType === 'previous-night-only' && firstSameDayBeforeFlight
+			? {
+					...firstSameDayBeforeFlight,
+					safetyShortfallMinutes: Math.max(
+						0,
+						Math.round(
+							(new Date(firstSameDayBeforeFlight.airportArrivalTime) - airportBy) /
+								60_000
+						)
+					),
+					minutesBeforeFlight: Math.max(
+						0,
+						Math.round(
+							(flightTime - new Date(firstSameDayBeforeFlight.airportArrivalTime)) /
+								60_000
+						)
+					)
+				}
+			: null;
 	const next = best
 		? services.find(
 				(serviceOption) =>
@@ -107,6 +155,17 @@ export const recommendTrip = (service, input) => {
 			: null;
 
 	return {
+		resultType,
+		calendarRelation: best ? calendarRelation(best) : null,
+		airportWaitMinutes: best
+			? Math.max(
+					0,
+					Math.round(
+						(flightTime - new Date(best.airportArrivalTime)) / 60_000
+					)
+				)
+			: null,
+		sameDayAlternative,
 		boardingSelection: {
 			mode: selectionMode,
 			placeId: nearest.placeId
@@ -135,8 +194,27 @@ export const recommendTrip = (service, input) => {
 			lng: nearest.stop.lng
 		},
 		leaveHomeTime: leaveHomeTime?.toISOString() || null,
-		warning: best
-			? null
-			: 'No scheduled bus can reach the airport within your selected safety window.'
+		warning:
+			resultType === 'previous-night-only'
+				? 'No bus on the morning of your flight reaches the airport within your selected safety window.'
+				: best
+					? null
+					: 'No scheduled bus can reach the airport within your selected safety window.'
 	};
+};
+
+const supportedResultTypes = new Set([
+	'same-day-safe',
+	'previous-night-only',
+	'no-safe-bus'
+]);
+
+export const reconcileRecommendation = (localResult, serverResult) => {
+	if (
+		!serverResult ||
+		typeof serverResult !== 'object' ||
+		!supportedResultTypes.has(serverResult.resultType)
+	)
+		return localResult;
+	return serverResult;
 };

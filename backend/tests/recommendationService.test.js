@@ -36,6 +36,50 @@ test('uses a three-hour terminal buffer for international flights', () => {
   assert.equal(result.terminalBuffer, 180);
 });
 
+test('classifies an early flight with only a previous-night safe bus', () => {
+  const journeyDate = addDaysToDateValue(indiaDateValue(), 1);
+  const input = {
+    boardingPlaceId: 'anandapuram',
+    flightTime: indiaDateTime(journeyDate, '07:50').toISOString(),
+    flightType: 'domestic',
+  };
+  const backendResult = recommendTrip(DEFAULT_DATA, input);
+  const frontendResult = recommendTripInBrowser(DEFAULT_DATA, input);
+
+  assert.deepEqual(backendResult, frontendResult);
+  assert.equal(backendResult.resultType, 'previous-night-only');
+  assert.equal(backendResult.calendarRelation, 'previous-day');
+  assert.equal(
+    indiaDateValue(backendResult.best.departureTime),
+    addDaysToDateValue(journeyDate, -1),
+  );
+  assert.equal(backendResult.airportWaitMinutes, 605);
+  assert.equal(backendResult.sameDayAlternative.routeCode, 'ASR-2');
+  assert.equal(backendResult.sameDayAlternative.safetyShortfallMinutes, 60);
+  assert.equal(backendResult.sameDayAlternative.minutesBeforeFlight, 60);
+  assert.equal(indiaDateValue(backendResult.sameDayAlternative.departureTime), journeyDate);
+  assert.match(backendResult.warning, /morning of your flight/i);
+});
+
+test('includes a same-day bus arriving exactly at the safety deadline', () => {
+  const journeyDate = addDaysToDateValue(indiaDateValue(), 1);
+  const service = structuredClone(DEFAULT_DATA);
+  const asr2 = service.routes.find((route) => route.code === 'ASR-2');
+  asr2.timetables.toAirport = ['07:30'];
+  asr2.times = ['07:30'];
+  const input = {
+    boardingPlaceId: 'anandapuram',
+    flightTime: indiaDateTime(journeyDate, '12:00').toISOString(),
+    flightType: 'domestic',
+  };
+  const backendResult = recommendTrip(service, input);
+
+  assert.equal(backendResult.resultType, 'same-day-safe');
+  assert.equal(backendResult.calendarRelation, 'same-day');
+  assert.equal(backendResult.best.airportArrivalTime, backendResult.airportBy);
+  assert.equal(backendResult.sameDayAlternative, null);
+});
+
 test('evaluates both active routes at a shared boarding place', () => {
   const nearest = nearestStop(DEFAULT_DATA, { lat: 17.68605, lng: 83.20421 });
   assert.deepEqual(nearest.routeCodes, ['ASR-1', 'ASR-2']);

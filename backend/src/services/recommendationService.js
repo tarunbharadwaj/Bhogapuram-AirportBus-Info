@@ -85,14 +85,45 @@ export function recommendTrip(data, input) {
   ).sort((a, b) => new Date(a.departureTime) - new Date(b.departureTime));
 
   const safeServices = services.filter((service) => new Date(service.airportArrivalTime) <= airportBy);
-  const best = safeServices.at(-1) || null;
-  const earlier = safeServices.at(-2) || null;
+  const flightDateValue = indiaDateValue(flightTime);
+  const calendarRelation = (service) => {
+    const departureDateValue = indiaDateValue(service.departureTime);
+    if (departureDateValue === flightDateValue) return 'same-day';
+    return departureDateValue < flightDateValue ? 'previous-day' : 'later-day';
+  };
+  const safeSameDayServices = safeServices.filter((service) => calendarRelation(service) === 'same-day');
+  const safePreviousDayServices = safeServices.filter((service) => calendarRelation(service) === 'previous-day');
+  const best = safeSameDayServices.at(-1) || safePreviousDayServices.at(-1) || null;
+  const resultType = best
+    ? calendarRelation(best) === 'same-day'
+      ? 'same-day-safe'
+      : 'previous-night-only'
+    : 'no-safe-bus';
+  const earlier = best
+    ? safeServices.filter((service) => new Date(service.departureTime) < new Date(best.departureTime)).at(-1) || null
+    : null;
+  const firstSameDayBeforeFlight = services.find((service) =>
+    calendarRelation(service) === 'same-day' && new Date(service.airportArrivalTime) < flightTime,
+  );
+  const sameDayAlternative = resultType === 'previous-night-only' && firstSameDayBeforeFlight
+    ? {
+      ...firstSameDayBeforeFlight,
+      safetyShortfallMinutes: Math.max(0, Math.round((new Date(firstSameDayBeforeFlight.airportArrivalTime) - airportBy) / 60_000)),
+      minutesBeforeFlight: Math.max(0, Math.round((flightTime - new Date(firstSameDayBeforeFlight.airportArrivalTime)) / 60_000)),
+    }
+    : null;
   const next = best ? services.find((service) => new Date(service.departureTime) > new Date(best.departureTime)) : services.find((service) => new Date(service.departureTime) > new Date());
   const leaveHomeTime = best && walkMinutes !== null
     ? new Date(new Date(best.departureTime).getTime() - (walkMinutes + 10) * 60_000)
     : null;
 
   return {
+    resultType,
+    calendarRelation: best ? calendarRelation(best) : null,
+    airportWaitMinutes: best
+      ? Math.max(0, Math.round((flightTime - new Date(best.airportArrivalTime)) / 60_000))
+      : null,
+    sameDayAlternative,
     boardingSelection: {
       mode: selectionMode,
       placeId: nearest.placeId,
@@ -121,6 +152,10 @@ export function recommendTrip(data, input) {
       lng: nearest.stop.lng,
     },
     leaveHomeTime: leaveHomeTime?.toISOString() || null,
-    warning: best ? null : 'No scheduled bus can reach the airport within your selected safety window.',
+    warning: resultType === 'previous-night-only'
+      ? 'No bus on the morning of your flight reaches the airport within your selected safety window.'
+      : best
+      ? null
+      : 'No scheduled bus can reach the airport within your selected safety window.',
   };
 }

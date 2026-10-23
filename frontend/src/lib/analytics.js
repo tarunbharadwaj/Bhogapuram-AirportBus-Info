@@ -9,6 +9,7 @@ const allowedEvents = new Set([
 	'outside_service_area_override',
 	'plan_generated',
 	'no_safe_bus_found',
+	'overnight_option_shown',
 	'airport_to_city_plan_generated',
 	'airport_to_city_plan_unavailable',
 	'route_viewed',
