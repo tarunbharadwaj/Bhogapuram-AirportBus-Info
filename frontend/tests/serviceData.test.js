@@ -9,12 +9,16 @@ import {
 import {
 	addDaysToDateValue,
 	indiaDateTime,
-	indiaDateValue
+	indiaDateValue,
+	indiaIsoFromParts
 } from '../../shared/airportDepartures.mjs';
 import { FALLBACK_SERVICE } from '../src/data/fallbackService.js';
 import { airportNavigationLink, directionsLink } from '../src/lib/format.js';
 import { findNearestBoardingPoint } from '../src/lib/nearestStop.js';
-import { recommendTrip } from '../src/lib/recommendTrip.js';
+import {
+	recommendTrip,
+	reconcileRecommendation
+} from '../src/lib/recommendTrip.js';
 import {
 	buildTimetable,
 	getVisibleTimetableServices
@@ -22,6 +26,17 @@ import {
 
 const route = (code) =>
 	DEFAULT_SERVICE_DATA.routes.find((item) => item.code === code);
+
+test('converts 12 AM and 12 PM flight inputs correctly in India time', () => {
+	assert.equal(
+		indiaIsoFromParts({ date: '2026-10-24', hour: '12', minute: '00', period: 'AM' }),
+		'2026-10-24T00:00:00+05:30'
+	);
+	assert.equal(
+		indiaIsoFromParts({ date: '2026-10-24', hour: '12', minute: '00', period: 'PM' }),
+		'2026-10-24T12:00:00+05:30'
+	);
+});
 
 test('contains the corrected published directional timetables', () => {
 	assert.deepEqual(route('ASR-1').timetables.toAirport, [
@@ -224,8 +239,36 @@ test('plans directly from a manually selected stop without location coverage che
 	assert.equal(result.outsideServiceArea, false);
 	assert.equal(result.best.stopId, 'it-hills-stop');
 	assert.equal(result.best.stopTimeQuality, 'estimated');
+	assert.equal(result.resultType, 'same-day-safe');
+	assert.equal(result.calendarRelation, 'same-day');
+	assert.equal(result.sameDayAlternative, null);
 	assert.ok(
 		new Date(result.best.arriveAtStopBy) < new Date(result.best.departureTime)
+	);
+});
+
+test('does not let a legacy backend response remove overnight safety classification', () => {
+	const localResult = {
+		resultType: 'previous-night-only',
+		calendarRelation: 'previous-day',
+		airportWaitMinutes: 605,
+		sameDayAlternative: { safetyShortfallMinutes: 60 },
+		best: { routeCode: 'ASR-2' }
+	};
+	const legacyServerResult = {
+		best: { routeCode: 'ASR-2' },
+		warning: null
+	};
+	assert.equal(
+		reconcileRecommendation(localResult, legacyServerResult),
+		localResult
+	);
+	assert.equal(
+		reconcileRecommendation(localResult, {
+			...localResult,
+			resultType: 'same-day-safe'
+		}).resultType,
+		'same-day-safe'
 	);
 });
 

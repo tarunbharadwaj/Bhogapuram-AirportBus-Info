@@ -13,6 +13,7 @@ import {
 	directionsLink,
 	formatDuration,
 	formatRoundedTime,
+	formatShortDate,
 	formatTime,
 	mapsLink,
 	airportNavigationLink
@@ -47,9 +48,15 @@ export default function Recommendation({ result, directionsOrigin }) {
 		);
 
 	const isEstimatedStopTime = result.best.stopTimeQuality === 'estimated';
+	const overnightOnly = result.resultType === 'previous-night-only';
 	const displayedStopTime = isEstimatedStopTime
 		? `~${formatRoundedTime(result.best.departureTime)}`
 		: formatTime(result.best.departureTime);
+	const datedTime = (value, formattedTime = formatTime(value)) =>
+		`${formatShortDate(value)} · ${formattedTime}`;
+	const displayedBestStopTime = overnightOnly
+		? datedTime(result.best.departureTime, displayedStopTime)
+		: displayedStopTime;
 	const manualSelection = result.boardingSelection?.mode === 'manual-stop';
 	const stopDirections = directionsLink({
 		destination: result.nearestStop,
@@ -69,7 +76,16 @@ export default function Recommendation({ result, directionsOrigin }) {
 		const timeLabel = isEstimatedStopTime
 			? 'Estimated Bus Arrival'
 			: 'Published Departure';
-		const text = `Vizag Airport Bus Details\n\n🚌 Bus Number: ${result.best.routeCode}\n📍 Boarding Point: ${result.best.stopName}\n🕐 ${timeLabel}: ${displayedStopTime.toUpperCase()}\n⏰ Be At Stop By: ${formatRoundedTime(result.best.arriveAtStopBy, 'floor').toUpperCase()}\n💰 Estimated Fare: ₹${result.best.fare}\n🗺️ Boarding Point Map: ${boardingPointMap}`;
+		const dateWarning = overnightOnly
+			? `\n⚠️ Previous-night option for a ${datedTime(result.flightTime)} flight.\n`
+			: '';
+		const stopBy = overnightOnly
+			? datedTime(
+					result.best.arriveAtStopBy,
+					formatRoundedTime(result.best.arriveAtStopBy, 'floor')
+				)
+			: formatRoundedTime(result.best.arriveAtStopBy, 'floor');
+		const text = `Vizag Airport Bus Details\n${dateWarning}\n🚌 Bus Number: ${result.best.routeCode}\n📍 Boarding Point: ${result.best.stopName}\n🕐 ${timeLabel}: ${displayedBestStopTime.toUpperCase()}\n⏰ Be At Stop By: ${stopBy.toUpperCase()}\n💰 Estimated Fare: ₹${result.best.fare}\n🗺️ Boarding Point Map: ${boardingPointMap}`;
 		window.open(
 			`https://wa.me/?text=${encodeURIComponent(text)}`,
 			'_blank',
@@ -80,15 +96,22 @@ export default function Recommendation({ result, directionsOrigin }) {
 	const milestones = [
 		[
 			`Published departure from ${result.best.routeOriginName}`,
-			formatTime(result.best.routeOriginDepartureTime)
+			overnightOnly
+				? datedTime(result.best.routeOriginDepartureTime)
+				: formatTime(result.best.routeOriginDepartureTime)
 		],
 		[
 			isEstimatedStopTime
 				? 'Estimated bus arrival at your stop'
 				: 'Published departure at your stop',
-			displayedStopTime
+			displayedBestStopTime
 		],
-		['Airport ETA', formatTime(result.best.airportArrivalTime)]
+		[
+			'Airport ETA',
+			overnightOnly
+				? datedTime(result.best.airportArrivalTime)
+				: formatTime(result.best.airportArrivalTime)
+		]
 	];
 	const details = [
 		[BadgeIndianRupee, 'Estimated fare', `₹${result.best.fare}`],
@@ -97,7 +120,11 @@ export default function Recommendation({ result, directionsOrigin }) {
 			manualSelection ? 'Selected bus stop' : 'Nearest bus stop',
 			result.nearestStop.name
 		],
-		[Clock3, 'Be at airport by', formatTime(result.airportBy)],
+		[
+			Clock3,
+			'Be at airport by',
+			overnightOnly ? datedTime(result.airportBy) : formatTime(result.airportBy)
+		],
 		[Luggage, 'Flight buffer', formatDuration(result.terminalBuffer)]
 	];
 
@@ -105,18 +132,34 @@ export default function Recommendation({ result, directionsOrigin }) {
 		<div id="recommendation" className="col-span-full grid gap-4">
 			<article className="rounded-3xl bg-[#122c2b] p-7 text-white shadow-[0_20px_50px_rgba(15,46,44,.2)] max-md:p-5">
 			<div className="flex items-center text-[.68rem] text-teal-100/65">
-				<span className="flex items-center gap-1 font-extrabold uppercase tracking-widest text-teal-200">
-					<Check size={14} /> Best option
+				<span
+					className={`flex items-center gap-1 font-extrabold uppercase tracking-widest ${overnightOnly ? 'text-amber-200' : 'text-teal-200'}`}
+				>
+					{overnightOnly ? <CircleAlert size={14} /> : <Check size={14} />}
+					{overnightOnly ? 'Previous-night option' : 'Best option'}
 				</span>
 			</div>
+			{overnightOnly && (
+				<div className="mt-4 rounded-2xl border border-amber-300/20 bg-amber-400/10 p-4 text-amber-50">
+					<h2 className="text-lg font-bold">
+						No morning bus meets your {formatDuration(result.terminalBuffer)} safety window.
+					</h2>
+					<p className="mt-1 text-xs leading-relaxed text-amber-100/80">
+						Your flight departs on {datedTime(result.flightTime)}. You should reach the
+						airport by {datedTime(result.airportBy)}. The option below requires travelling
+						the previous night.
+					</p>
+				</div>
+			)}
 			<div className="mt-5 flex items-start gap-4">
 				<span className="rounded-lg bg-brand px-3 py-2 text-xs font-extrabold tracking-wide">
 					Bus Route: {result.best.routeCode}
 				</span>
 				<div>
 					<h2 className="text-xl font-bold tracking-tight">
-						{manualSelection ? 'Selected Boarding Stop' : 'Nearest Bus Stop'} is{' '}
-						{result.best.stopName}
+						{overnightOnly
+							? `Last safer scheduled option from ${result.best.stopName}`
+							: `${manualSelection ? 'Selected Boarding Stop' : 'Nearest Bus Stop'} is ${result.best.stopName}`}
 					</h2>
 					<p className="mt-1 text-xs text-teal-100/60">
 						{manualSelection
@@ -137,7 +180,12 @@ export default function Recommendation({ result, directionsOrigin }) {
 						{index === 1 && (
 							<small className="mt-1 block text-[.62rem] text-teal-100/55">
 								Be at the stop by{' '}
-								{formatRoundedTime(result.best.arriveAtStopBy, 'floor')}
+								{overnightOnly
+									? datedTime(
+											result.best.arriveAtStopBy,
+											formatRoundedTime(result.best.arriveAtStopBy, 'floor')
+										)
+									: formatRoundedTime(result.best.arriveAtStopBy, 'floor')}
 							</small>
 						)}
 					</div>
@@ -167,7 +215,43 @@ export default function Recommendation({ result, directionsOrigin }) {
 				))}
 			</div>
 
-			{result.next && !result.isNextSafe && (
+			{overnightOnly && (
+				<div className="mt-4 grid gap-3">
+					<p className="flex items-start gap-2 rounded-xl bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-100">
+						<CircleAlert className="mt-0.5 shrink-0" size={16} />
+						<span>
+							This option reaches the airport approximately{' '}
+							<strong>{formatDuration(result.airportWaitMinutes)}</strong> before your flight.
+						</span>
+					</p>
+					{result.sameDayAlternative && (
+						<div className="rounded-2xl border border-white/10 bg-white/6 p-4">
+							<span className="text-[.65rem] font-extrabold uppercase tracking-widest text-amber-200">
+								First bus on the morning of your flight · Not recommended
+							</span>
+							<h3 className="mt-2 text-base font-bold">
+								{result.sameDayAlternative.routeCode} reaches {result.best.stopName} at{' '}
+								{datedTime(
+									result.sameDayAlternative.departureTime,
+									result.sameDayAlternative.stopTimeQuality === 'estimated'
+										? `~${formatRoundedTime(result.sameDayAlternative.departureTime)}`
+										: formatTime(result.sameDayAlternative.departureTime)
+								)}
+							</h3>
+							<p className="mt-1 text-xs leading-relaxed text-teal-100/65">
+								Estimated airport arrival:{' '}
+								{datedTime(result.sameDayAlternative.airportArrivalTime)}. It arrives only{' '}
+								{formatDuration(result.sameDayAlternative.minutesBeforeFlight)} before the
+								flight and misses the recommended safety window by{' '}
+								{formatDuration(result.sameDayAlternative.safetyShortfallMinutes)}. Consider
+								another mode of transport.
+							</p>
+						</div>
+					)}
+				</div>
+			)}
+
+			{!overnightOnly && result.next && !result.isNextSafe && (
 				<p className="mt-4 flex items-center gap-2 rounded-xl bg-amber-500/10 p-3 text-xs text-amber-200">
 					<CircleAlert size={16} /> The {formatTime(result.next.departureTime)} bus
 					may miss your safety window.
@@ -228,7 +312,7 @@ export default function Recommendation({ result, directionsOrigin }) {
 					</span>
 				</a>
 			</div>
-			{result.earlier && (
+			{!overnightOnly && result.earlier && (
 				<p className="mt-3 text-center text-[.68rem] text-teal-100/55">
 					Want more margin? The previous bus reaches this stop at{' '}
 					<strong>
@@ -241,9 +325,9 @@ export default function Recommendation({ result, directionsOrigin }) {
 			)}
 			</article>
 			<QuickFeedback
-				key="to_airport_success"
-				feedbackContext="to_airport_success"
-				resultStatus="success"
+				key={overnightOnly ? 'to_airport_unavailable' : 'to_airport_success'}
+				feedbackContext={overnightOnly ? 'to_airport_unavailable' : 'to_airport_success'}
+				resultStatus={overnightOnly ? 'unavailable' : 'success'}
 				direction="to-airport"
 				routeCode={result.best.routeCode}
 				stopId={result.best.stopId}
