@@ -24,6 +24,7 @@ const allowedEvents = new Set([
 	'timetable_mode_changed',
 	'ticketing_link_opened',
 	'live_tracking_opened',
+	'live_tracking_rating',
 	'faq_opened',
 	'journey_maps_opened',
 	'feedback_prompt_shown',

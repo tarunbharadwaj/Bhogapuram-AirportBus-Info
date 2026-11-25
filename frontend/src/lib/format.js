@@ -10,7 +10,7 @@ export const formatDuration = (minutes) => {
 };
 export const mapsLink = (lat, lng) => `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 
-const AIRPORT_NAVIGATION_DESTINATION = Object.freeze({
+export const AIRPORT_NAVIGATION_DESTINATION = Object.freeze({
 	lat: 17.9751901,
 	lng: 83.5070719
 });

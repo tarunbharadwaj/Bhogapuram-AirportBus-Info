@@ -34,3 +34,16 @@
 @media (prefers-contrast: more) {
   .adaptive-material { background-color: Canvas !important; border-color: CanvasText !important; backdrop-filter: none !important; }
 }
+
+.live-map-credits .leaflet-control-attribution {
+  float: none;
+  margin: 0;
+  padding: 0;
+  color: inherit;
+  line-height: inherit;
+}
+
+.live-map-credits .leaflet-control-attribution a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

@@ -6,6 +6,7 @@ import ThemeToggle from './ThemeToggle.jsx';
 const sectionLinks = [
 	{ label: 'Plan a trip', id: 'planner' },
 	{ label: 'Timetables', id: 'timetables' },
+	{ label: 'Live buses', id: 'live-tracking' },
 	{ label: 'Routes & stops', id: 'routes' },
 	{ label: 'FAQ', id: 'faq' }
 ];
@@ -34,7 +35,7 @@ export default function Header() {
 				{sectionLinks.map(({ label, id }) => (
 					<button
 						key={label}
-						className="rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white dark:hover:bg-white/8 max-md:text-left"
+						className="rounded-xl px-3 py-2 text-sm font-semibold hover:bg-white dark:hover:bg-white/8 md:max-lg:px-2 max-md:text-left"
 						onClick={() => navigate(id)}
 					>
 						{label}

@@ -48,7 +48,8 @@ const nextQuarterHour = () => {
 export default function FromAirportPlanner({
 	service,
 	backendReady,
-	onDirectionChange
+	onDirectionChange,
+	onTrack
 }) {
 	const destinations = useMemo(() => getAirportDestinations(service), [service]);
 	const [destinationPlaceId, setDestinationPlaceId] = useState('');
@@ -293,7 +294,7 @@ export default function FromAirportPlanner({
 				</p>
 			</form>
 
-			{result && <AirportDepartureOptions result={result} />}
+			{result && <AirportDepartureOptions result={result} onTrack={onTrack} />}
 		</section>
 	);
 }

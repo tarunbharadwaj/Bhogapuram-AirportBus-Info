@@ -10,9 +10,10 @@ import {
 import { indiaDateValue } from '../../../shared/airportDepartures.mjs';
 import { trackEvent } from '../lib/analytics.js';
 import { formatShortDate, formatTime, mapsLink } from '../lib/format.js';
+import LiveBusMapLink from './LiveBusMapLink.jsx';
 import QuickFeedback from './QuickFeedback.jsx';
 
-export default function AirportDepartureOptions({ result }) {
+export default function AirportDepartureOptions({ result, onTrack }) {
 	if (!result?.options?.length)
 		return (
 			<div id="airport-departure-results" className="col-span-full grid gap-4">
@@ -36,6 +37,7 @@ export default function AirportDepartureOptions({ result }) {
 			</div>
 		);
 	const readyDate = indiaDateValue(result.readyAt);
+	const today = indiaDateValue(new Date());
 	const destinationMap = mapsLink(result.destination.lat, result.destination.lng);
 
 	const openMap = (option) => {
@@ -83,6 +85,7 @@ export default function AirportDepartureOptions({ result }) {
 				{result.options.map((option, index) => {
 					const departureDate = indiaDateValue(option.airportDepartureTime);
 					const isFollowingDay = departureDate !== readyDate;
+					const isDepartureToday = departureDate === today;
 					return (
 						<section
 							key={`${option.routeId}-${option.airportDepartureTime}`}
@@ -148,7 +151,7 @@ export default function AirportDepartureOptions({ result }) {
 								</div>
 							</div>
 
-							<div className="mt-3 grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+							<div className={`mt-3 grid gap-3 ${isDepartureToday ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
 								<a
 									className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white font-bold text-slate-700 transition active:scale-[.98]"
 									href={destinationMap}
@@ -165,7 +168,24 @@ export default function AirportDepartureOptions({ result }) {
 								>
 									<Send size={16} /> Share on WhatsApp
 								</button>
+								{isDepartureToday && (
+									<LiveBusMapLink
+										source="from_airport_planner"
+										onClick={() => onTrack({
+											routeCode: option.routeCode,
+											direction: 'from-airport',
+											scheduledOriginAt: option.airportDepartureTime,
+											stop: result.destination
+										})}
+										className="border border-teal-300/30 bg-teal-300/10 text-teal-50 hover:bg-teal-300/15"
+									/>
+								)}
 							</div>
+							{departureDate > today && (
+								<p className="mt-3 text-xs text-teal-100/75">
+									Check live buses on {formatShortDate(option.airportDepartureTime)}.
+								</p>
+							)}
 						</section>
 					);
 				})}

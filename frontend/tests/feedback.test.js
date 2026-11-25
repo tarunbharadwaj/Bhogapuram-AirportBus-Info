@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { sanitizeAnalyticsParameters } from '../src/lib/analytics.js';
 import {
+	getFeedbackContext,
 	inlineFeedbackMetadata,
 	submitFeedback,
 	validateFeedback
@@ -157,6 +158,25 @@ test('keeps only approved inline feedback metadata', () => {
 			stop_id: 'gajuwaka-stop'
 		}
 	);
+});
+
+test('tracker links preselect the feedback category and label the submission source', async () => {
+	const report = getFeedbackContext('?source=live-tracking&category=complaint');
+	assert.deepEqual(report, { source: 'live-tracking', category: 'complaint' });
+	assert.deepEqual(getFeedbackContext('?source=live-tracking&category=invalid'), { source: 'live-tracking', category: 'feedback' });
+	assert.deepEqual(getFeedbackContext('?source=other&category=complaint'), { source: null, category: 'feedback' });
+	let payload;
+	await submitFeedback('https://formsubmit.co/ajax/random-token', {
+		category: report.category,
+		message: 'The tracker stopped updating.',
+		email: 'traveller@example.com',
+		metadata: { source: report.source }
+	}, async (_url, options) => {
+		payload = JSON.parse(options.body);
+		return { ok: true, json: async () => ({ success: true }) };
+	});
+	assert.equal(payload.category, 'Complaint');
+	assert.equal(payload.feedback_source, 'Live bus tracking');
 });
 
 test('sends inline comments with safe context and a distinct subject', async () => {

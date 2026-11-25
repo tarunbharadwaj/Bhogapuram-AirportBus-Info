@@ -4,8 +4,9 @@ import { ServiceController } from './controllers/serviceController.js';
 import { ServiceModel } from './models/serviceModel.js';
 import { createApiRoutes } from './routes/index.js';
 import { AdminSessionService } from './services/adminSessionService.js';
+import { ReclaimTrackingService } from './services/reclaimTrackingService.js';
 
-export const createApp = ({ serviceModel = new ServiceModel(), sessions = new AdminSessionService() } = {}) => {
+export const createApp = ({ serviceModel = new ServiceModel(), sessions = new AdminSessionService(), tracking = new ReclaimTrackingService() } = {}) => {
   const app = express();
   app.use(express.json({ limit: '250kb' }));
 
@@ -22,7 +23,7 @@ export const createApp = ({ serviceModel = new ServiceModel(), sessions = new Ad
 
   const serviceController = new ServiceController(serviceModel);
   const adminController = new AdminController(serviceModel, sessions);
-  app.use('/api', createApiRoutes({ serviceController, adminController, sessions }));
+  app.use('/api', createApiRoutes({ serviceController, adminController, sessions, tracking, serviceModel }));
   return app;
 };
 
