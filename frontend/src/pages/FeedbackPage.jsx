@@ -14,6 +14,7 @@ import ThemeToggle from '../components/ThemeToggle.jsx';
 import { trackEvent } from '../lib/analytics.js';
 import {
 	FEEDBACK_CATEGORIES,
+	getFeedbackContext,
 	isValidFeedbackEndpoint,
 	submitFeedback,
 	validateFeedback
@@ -30,8 +31,11 @@ const inputClass =
 	'mt-2 w-full rounded-2xl border border-slate-200 bg-white/80 px-4 text-sm text-ink shadow-sm outline-none transition-[border-color,box-shadow,background-color] focus:border-brand/60 focus:ring-4 focus:ring-brand/10 dark:border-white/10 dark:bg-white/6';
 
 export default function FeedbackPage() {
+	const { category: initialCategory, source } = getFeedbackContext(window.location.search);
+	const returnHref = source ? '/#live-tracking' : '/';
+	const returnLabel = source ? 'Back to live tracking' : 'Back to website';
 	const [form, setForm] = useState({
-		category: 'feedback',
+		category: initialCategory,
 		message: '',
 		email: '',
 		honey: ''
@@ -68,10 +72,10 @@ export default function FeedbackPage() {
 		setStatus('submitting');
 		setSubmitError('');
 		try {
-			await submitFeedback(endpoint, form);
-			trackEvent('feedback_submitted', { feedback_type: form.category });
+			await submitFeedback(endpoint, source ? { ...form, metadata: { source } } : form);
+			trackEvent('feedback_submitted', { feedback_type: form.category, request_source: source });
 			setStatus('success');
-			setForm({ category: 'feedback', message: '', email: '', honey: '' });
+			setForm({ category: initialCategory, message: '', email: '', honey: '' });
 		} catch {
 			setStatus('error');
 			setSubmitError(
@@ -94,10 +98,11 @@ export default function FeedbackPage() {
 				<div className="flex items-center gap-2">
 					<a
 						className="inline-flex min-h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-muted transition hover:bg-white/70 active:scale-[.98] dark:hover:bg-white/8"
-						href="/"
+						href={returnHref}
+						aria-label={returnLabel}
 					>
 						<ArrowLeft size={17} />
-						<span className="max-sm:hidden">Back to website</span>
+						<span className="max-sm:hidden">{returnLabel}</span>
 					</a>
 					<ThemeToggle />
 				</div>
@@ -140,9 +145,9 @@ export default function FeedbackPage() {
 								<div className="mt-7 flex justify-center gap-3 max-sm:flex-col">
 									<a
 										className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-200 bg-white px-5 text-sm font-bold transition active:scale-[.98] dark:border-white/10 dark:bg-white/6"
-										href="/"
+										href={returnHref}
 									>
-										Back to website
+										{returnLabel}
 									</a>
 									<button
 										className="min-h-12 rounded-xl bg-brand px-5 text-sm font-bold text-white shadow-lg shadow-brand/20 transition active:scale-[.98]"

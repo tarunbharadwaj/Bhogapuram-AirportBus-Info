@@ -65,6 +65,18 @@ Canonical route, ticketing and monthly-pass information lives in `shared/service
 
 The public planner supports either browser location or a manually selected active bus stop. Intermediate stop times are estimates marked with `~`; route-origin departures remain published times. The timetable defaults to the next five services and includes a full-daily-schedule view for planning ahead.
 
+## Live AeroExpress tracking
+
+The **Live buses** section uses vehicle positions and estimated stop progress from [Reclaim’s APSRTC GTFS-Realtime feed](https://github.com/reclaimchennai/apsrtc#gtfs-realtime). The backend serves a filtered snapshot at `/api/live-buses` and shares each upstream refresh across visitors. The tracker checks every 30 seconds while visible and enabled. The refresh button can request an earlier check, with a shared minimum of 15 seconds between upstream requests. Set `LIVE_TRACKING_ENABLED=false` on the backend to disable the feed.
+
+[The airport trip lookup](backend/src/data/reclaimAeroExpress.js) is a subset of Reclaim's [APSRTC static GTFS](https://github.com/reclaimchennai/apsrtc/blob/main/data/apsrtc-gtfs.zip), licensed under [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/). If Reclaim’s route or trip IDs change, refresh this lookup from `trips.txt` and `stop_times.txt`. Match direction by the first and last stop IDs, and classify ASR-1 and ASR-2 using the NAD and Scindia stop patterns respectively. Match a planner departure by full India service date, route, direction and the scheduled departure at Old Gajuwaka.
+
+The stop-pair map shows the nearest bus with fresh GPS and a matching live update that lists both selected stops ahead in order. In the all-bus view, selecting a map marker or choosing **Locate bus** draws that trip’s scheduled route and opens its stop timeline. **Follow bus** keeps the map centred as new GPS reports arrive. The timeline shows scheduled stop times in IST alongside arrival and delay estimates where Reclaim has matching updates. When the stop feed is missing, the timeline can estimate progress from recent GPS and heading along [the four airport route shapes](shared/reclaimAirportShapes.json) from the static GTFS. Stops without a verified mapping in [the shared stop lookup](shared/liveTracking.mjs) use the timetable. The all-bus map shows AeroExpress buses with GPS fixes under two minutes old, including buses parked or waiting at terminals. Base tiles are attributed to OpenStreetMap.
+
+When Vizag Airport is the boarding stop, the tracker shows outbound buses with recent GPS in the terminal area. Choosing a city destination narrows the results to routes that serve that stop. Terminal GPS can show a waiting bus before stop updates arrive. A bus reported to have passed the airport is excluded, even if a later refresh only has GPS.
+
+The ASR-2 map uses a [city route segment](frontend/src/lib/asr2CityRoutePaths.json) routed through Railway Station, RTC Complex, Siripuram and Opposite VUDA Park in each direction. The segment was generated with [OSRM on OpenStreetMap road data](https://map.project-osrm.org/about.html). If these stop coordinates change, reroute the segment between its stored endpoints. The map uses this segment for display while the live stop timeline uses its provider feed and GPS progress checks.
+
 ## Production
 
 Build the Tailwind/React frontend and start the Node API separately:

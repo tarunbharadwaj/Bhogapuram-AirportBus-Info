@@ -15,6 +15,13 @@ const inlineContexts = new Set([
 ]);
 const directions = new Set(['to-airport', 'from-airport']);
 
+export const getFeedbackContext = (search) => {
+	const params = new URLSearchParams(search);
+	const source = params.get('source') === 'live-tracking' ? 'live-tracking' : null;
+	const category = params.get('category');
+	return { source, category: source && categoryValues.has(category) ? category : 'feedback' };
+};
+
 const safeIdentifier = (value, maximumLength = 100) =>
 	typeof value === 'string' && /^[a-z0-9_-]+$/i.test(value)
 		? value.slice(0, maximumLength)
@@ -85,6 +92,7 @@ export const submitFeedback = async (
 		category: categoryLabel,
 		message: message.trim(),
 		...inlineFeedbackMetadata(metadata),
+		...(metadata?.source === 'live-tracking' && { feedback_source: 'Live bus tracking' }),
 		_subject:
 			metadata?.source === 'inline-survey'
 				? 'New Vizag Airport Bus inline feedback'

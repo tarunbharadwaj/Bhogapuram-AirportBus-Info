@@ -8,6 +8,7 @@ import {
 	Navigation,
 	Send
 } from 'lucide-react';
+import { indiaDateValue } from '../../../shared/airportDepartures.mjs';
 import { trackEvent } from '../lib/analytics.js';
 import {
 	directionsLink,
@@ -18,9 +19,10 @@ import {
 	mapsLink,
 	airportNavigationLink
 } from '../lib/format.js';
+import LiveBusMapLink from './LiveBusMapLink.jsx';
 import QuickFeedback from './QuickFeedback.jsx';
 
-export default function Recommendation({ result, directionsOrigin }) {
+export default function Recommendation({ result, directionsOrigin, onTrack }) {
 	if (!result.best)
 		return (
 			<div id="recommendation" className="col-span-full grid gap-4">
@@ -63,6 +65,8 @@ export default function Recommendation({ result, directionsOrigin }) {
 		origin: directionsOrigin || undefined
 	});
 	const airportNavigation = airportNavigationLink();
+	const isBoardingToday =
+		indiaDateValue(result.best.departureTime) === indiaDateValue();
 
 	const share = () => {
 		trackEvent('whatsapp_shared', {
@@ -311,6 +315,28 @@ export default function Recommendation({ result, directionsOrigin }) {
 						</span>
 					</span>
 				</a>
+			</div>
+			<div className="mt-4 rounded-xl border border-white/15 p-3 sm:flex sm:items-center sm:justify-between sm:gap-3">
+				<div>
+					<p className="text-sm font-bold">Waiting for the bus?</p>
+					<p className="mt-1 text-xs leading-relaxed text-teal-100/75">
+						{isBoardingToday
+							? 'See GPS positions for buses on your route and look for your scheduled departure.'
+							: `Check live bus positions on your boarding date (${formatShortDate(result.best.departureTime)}).`}
+					</p>
+				</div>
+				{isBoardingToday && (
+					<LiveBusMapLink
+						source="planner"
+						onClick={() => onTrack({
+							routeCode: result.best.routeCode,
+							direction: 'to-airport',
+							scheduledOriginAt: result.best.routeOriginDepartureTime,
+							stop: result.nearestStop
+						})}
+						className="mt-3 w-full shrink-0 bg-white/10 text-teal-50 hover:bg-white/15 sm:mt-0 sm:w-auto"
+					/>
+				)}
 			</div>
 			{!overnightOnly && result.earlier && (
 				<p className="mt-3 text-center text-[.68rem] text-teal-100/55">

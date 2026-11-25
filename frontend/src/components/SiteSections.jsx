@@ -302,7 +302,7 @@ export function Footer({ ticketing = fallbackTicketing }) {
 					target="_blank"
 					rel="noreferrer"
 				>
-					Live tracking <ExternalLink size={12} />
+					APSRTC Live Track <ExternalLink size={12} />
 				</a>
 				<a
 					className="flex items-center gap-1"

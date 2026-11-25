@@ -63,7 +63,7 @@ const currentMinute = () => {
 	return now;
 };
 
-export default function Planner({ service, backendReady }) {
+export default function Planner({ service, backendReady, onTrack }) {
 	const [tripDirection, setTripDirection] = useState('to-airport');
 	const autoLocateAttempted = useRef(false);
 	const [startMode, setStartMode] = useState('');
@@ -389,6 +389,7 @@ export default function Planner({ service, backendReady }) {
 				service={service}
 				backendReady={backendReady}
 				onDirectionChange={setTripDirection}
+				onTrack={onTrack}
 			/>
 		);
 
@@ -752,6 +753,7 @@ export default function Planner({ service, backendReady }) {
 			</form>
 			{result && (
 				<Recommendation
+					onTrack={onTrack}
 					result={result}
 					directionsOrigin={startMode === 'location' ? coordinates : null}
 				/>

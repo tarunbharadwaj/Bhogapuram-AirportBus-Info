@@ -7,8 +7,9 @@ import {
 	buildTimetable,
 	getVisibleTimetableServices
 } from '../lib/timetable.js';
+import LiveBusMapLink from './LiveBusMapLink.jsx';
 
-export default function Timetable({ service }) {
+export default function Timetable({ service, onTrack }) {
 	const sectionRef = useRef(null);
 	const [sectionVisible, setSectionVisible] = useState(false);
 	const activeRoutes = useMemo(
@@ -99,9 +100,19 @@ export default function Timetable({ service }) {
 						Know every departure.
 					</h2>
 				</div>
-				<p className="max-w-md text-sm leading-relaxed text-muted max-md:mt-4">
-					See the next five buses or switch to the full daily schedule to plan ahead.
-				</p>
+				<div className="max-w-md max-md:mt-4">
+					<p className="text-sm leading-relaxed text-muted">
+						See the next five buses or switch to the full daily schedule to plan ahead.
+					</p>
+					<div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+						<LiveBusMapLink
+							source="timetable"
+							onClick={() => onTrack({ routeCode: route.code, direction, stop: data.stop })}
+							className="border border-brand/25 bg-brand-soft text-brand hover:underline dark:text-teal-200"
+						/>
+						<span className="text-xs text-muted">Positions update as GPS is reported</span>
+					</div>
+				</div>
 			</div>
 			<div className="adaptive-material grid min-h-96 grid-cols-[18rem_1fr] overflow-hidden rounded-3xl border border-white bg-white/80 shadow-[0_18px_55px_rgba(22,44,58,.08)] backdrop-blur-xl transition-colors duration-300 dark:border-white/10 dark:bg-slate-900/85 dark:shadow-[0_20px_55px_rgba(0,0,0,.28)] max-md:grid-cols-1">
 				<div className="border-r border-slate-200 bg-slate-100 p-5 dark:border-white/10 dark:bg-white/4 max-md:border-r-0 max-md:border-b">
