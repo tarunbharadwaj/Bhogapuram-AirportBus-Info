@@ -352,3 +352,12 @@ test('opens airport navigation from the device location to the supplied airport 
 	assert.equal(url.searchParams.get('dir_action'), 'navigate');
 	assert.equal(url.searchParams.has('origin'), false);
 });
+
+test('starts navigation from the device location to the selected city stop', () => {
+	const destination = { lat: 17.736, lng: 83.311 };
+	const url = new URL(directionsLink({ destination, navigate: true }));
+	assert.equal(url.searchParams.get('destination'), '17.736,83.311');
+	assert.equal(url.searchParams.get('travelmode'), 'driving');
+	assert.equal(url.searchParams.get('dir_action'), 'navigate');
+	assert.equal(url.searchParams.has('origin'), false);
+});

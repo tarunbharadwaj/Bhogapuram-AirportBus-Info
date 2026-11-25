@@ -30,7 +30,7 @@ export default function HomePage({ service, backendReady }) {
 				/>
 				<Confidence />
 			</main>
-			<Footer ticketing={service.ticketing} />
+			<Footer />
 		</div>
 	);
 }

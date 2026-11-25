@@ -15,16 +15,6 @@ export const AIRPORT_NAVIGATION_DESTINATION = Object.freeze({
 	lng: 83.5070719
 });
 
-export const airportNavigationLink = () => {
-	const params = new URLSearchParams({
-		api: '1',
-		destination: `${AIRPORT_NAVIGATION_DESTINATION.lat},${AIRPORT_NAVIGATION_DESTINATION.lng}`,
-		travelmode: 'driving',
-		dir_action: 'navigate'
-	});
-	return `https://www.google.com/maps/dir/?${params.toString()}`;
-};
-
 export const formatRoundedTime = (value, mode = 'nearest') => {
 	const interval = 5 * 60_000;
 	const timestamp = new Date(value).getTime();
@@ -32,12 +22,16 @@ export const formatRoundedTime = (value, mode = 'nearest') => {
 	return formatTime(new Date(round(timestamp / interval) * interval));
 };
 
-export const directionsLink = ({ destination, origin }) => {
+export const directionsLink = ({ destination, origin, navigate = false }) => {
 	const params = new URLSearchParams({
 		api: '1',
 		destination: `${destination.lat},${destination.lng}`,
 		travelmode: 'driving'
 	});
 	if (origin) params.set('origin', `${origin.lat},${origin.lng}`);
+	if (navigate) params.set('dir_action', 'navigate');
 	return `https://www.google.com/maps/dir/?${params.toString()}`;
 };
+
+export const airportNavigationLink = () =>
+	directionsLink({ destination: AIRPORT_NAVIGATION_DESTINATION, navigate: true });

@@ -2,7 +2,9 @@ import {
 	ArrowLeft,
 	CheckCircle2,
 	CircleAlert,
+	Instagram,
 	Lightbulb,
+	Linkedin,
 	Mail,
 	MessageSquareText,
 	Send,
@@ -316,6 +318,21 @@ export default function FeedbackPage() {
 							</form>
 						)}
 					</div>
+
+					<section aria-labelledby="feedback-contact-title" className="mt-6 rounded-2xl border border-brand/20 bg-brand-soft px-4 py-4 sm:px-5">
+						<h2 id="feedback-contact-title" className="text-base font-bold text-ink">Prefer to message me?</h2>
+						<p className="mt-1 text-sm text-muted">Send me a DM on Instagram.</p>
+						<div className="mt-3 flex flex-wrap gap-2">
+							<a href="https://www.instagram.com/build_with_tarun/?hl=en" target="_blank" rel="noopener noreferrer"
+								className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand px-3 text-sm font-bold text-white hover:bg-brand-dark focus-visible:outline-2 focus-visible:outline-offset-2">
+								<Instagram size={17} className="shrink-0" aria-hidden="true" /> Instagram
+							</a>
+							<a href="https://www.linkedin.com/in/tarun-bharadwaj/" target="_blank" rel="noopener noreferrer"
+								className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-brand/25 px-3 text-sm font-bold text-ink hover:bg-white/40 focus-visible:outline-2 focus-visible:outline-offset-2 dark:hover:bg-white/10">
+								<Linkedin size={17} className="shrink-0" aria-hidden="true" /> LinkedIn
+							</a>
+						</div>
+					</section>
 				</section>
 			</main>
 		</div>

@@ -2,7 +2,6 @@ import {
 	BadgeIndianRupee,
 	BusFront,
 	Clock3,
-	ExternalLink,
 	Heart,
 	HelpCircle,
 	Map,
@@ -111,12 +110,48 @@ export function Confidence() {
 	);
 }
 
+const faqLink = 'font-semibold text-brand underline dark:text-teal-200';
+
 const faqItems = [
+	{
+		id: 'nearest-boarding-stop',
+		question: 'How do I find the closest AeroExpress stop to my locality?',
+		answer: (
+			<>
+				In the <a href="#planner" className={faqLink}>trip planner</a>, choose <strong>To Airport</strong> and <strong>Use my location</strong>.
+				Allow location access to see the nearest supported stop and its straight-line distance.
+				After planning, tap <strong>Directions to this stop</strong> to check the actual route in Maps.
+			</>
+		)
+	},
 	{
 		id: 'location-required',
 		question: 'Is location permission required?',
 		answer:
 			'No. Choose “Choose a bus stop” in the planner to plan from any active stop without sharing your location.'
+	},
+	{
+		id: 'next-bus-times',
+		question: 'When is the next AeroExpress bus?',
+		answer: (
+			<>
+				Open <a href="#timetables" className={faqLink}>Timetables</a>, select your route and direction, then choose your boarding stop or destination.
+				<strong> Upcoming</strong> shows the next five scheduled buses for that selection.
+				Use <a href="#live-tracking" className={faqLink}>Live bus tracking</a> to check reported bus locations.
+			</>
+		)
+	},
+	{
+		id: 'airport-arrival-buffer',
+		question: 'Can I choose how early to arrive at the airport?',
+		answer: (
+			<>
+				The flight planner uses a fixed arrival buffer of 2 hours for domestic flights and 3 hours for international flights.
+				To compare buses against your own arrival time, open <a href="#timetables" className={faqLink}>Timetables</a>,
+				select <strong>City → Airport</strong> and check the <strong>Airport ETA</strong> column.
+				Check your airline’s check-in and bag-drop deadlines before choosing a later bus.
+			</>
+		)
 	},
 	{
 		id: 'estimated-stop-times',
@@ -129,6 +164,19 @@ const faqItems = [
 		question: 'Are AeroExpress buses guaranteed to run on time?',
 		answer:
 			'No. Traffic and operational conditions can change arrival times. Be at the stop 10-15 minutes early.'
+	},
+	{
+		id: 'aeroexpress-contact',
+		question: 'Is there a contact number for AeroExpress buses?',
+		answer: (
+			<>
+				We don’t have a verified contact number for AeroExpress buses. Use{' '}
+				<a href="#live-tracking" className={faqLink}>
+					Live bus tracking
+				</a>{' '}
+				to see the latest reported bus locations.
+			</>
+		)
 	},
 	{
 		id: 'ticket-availability',
@@ -279,8 +327,7 @@ export function FAQ({
 	);
 }
 
-export function Footer({ ticketing = fallbackTicketing }) {
-	const info = { ...fallbackTicketing, ...ticketing };
+export function Footer() {
 	return (
 		<footer className="mx-auto mb-8 grid max-w-[73rem] grid-cols-[1fr_auto] gap-8 border-t border-slate-200 py-8 dark:border-white/10 max-xl:mx-4 max-md:grid-cols-1">
 			<div className="flex items-center gap-3">
@@ -295,22 +342,6 @@ export function Footer({ ticketing = fallbackTicketing }) {
 			<div className="flex flex-wrap gap-x-4 gap-y-2 text-xs font-semibold text-muted">
 				<a className="flex items-center gap-1" href="/feedback">
 					Feedback <MessageSquareText size={12} />
-				</a>
-				<a
-					className="flex items-center gap-1"
-					href={info.trackingUrl}
-					target="_blank"
-					rel="noreferrer"
-				>
-					APSRTC Live Track <ExternalLink size={12} />
-				</a>
-				<a
-					className="flex items-center gap-1"
-					href="https://gmraero.com/visakhapatnam-airport.aspx"
-					target="_blank"
-					rel="noreferrer"
-				>
-					Airport information <ExternalLink size={12} />
 				</a>
 			</div>
 			<p className="col-span-full text-[.62rem] leading-relaxed text-slate-400">

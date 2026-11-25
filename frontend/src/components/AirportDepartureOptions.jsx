@@ -5,11 +5,12 @@ import {
 	Clock3,
 	ExternalLink,
 	MapPin,
+	Navigation,
 	Send
 } from 'lucide-react';
 import { indiaDateValue } from '../../../shared/airportDepartures.mjs';
 import { trackEvent } from '../lib/analytics.js';
-import { formatShortDate, formatTime, mapsLink } from '../lib/format.js';
+import { directionsLink, formatShortDate, formatTime, mapsLink } from '../lib/format.js';
 import LiveBusMapLink from './LiveBusMapLink.jsx';
 import QuickFeedback from './QuickFeedback.jsx';
 
@@ -68,18 +69,35 @@ export default function AirportDepartureOptions({ result, onTrack }) {
 				className="rounded-3xl bg-[#122c2b] p-7 text-white shadow-[0_20px_50px_rgba(15,46,44,.2)] max-md:p-5"
 				aria-labelledby="airport-departure-results-title"
 			>
-			<div className="flex items-center gap-2 text-[.68rem] font-extrabold uppercase tracking-widest text-teal-200">
-				<Check size={14} /> Airport to city
-			</div>
-			<h2
-				className="mt-3 text-2xl font-bold tracking-tight"
-				id="airport-departure-results-title"
-			>
-				Next buses to {result.destination.name}
-			</h2>
-			<p className="mt-1 text-xs leading-relaxed text-teal-100/60">
-				Compared across every active AeroExpress route serving this destination.
-			</p>
+				<header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-6">
+					<div className="min-w-0">
+						<div className="flex items-center gap-2 text-[.68rem] font-extrabold uppercase tracking-widest text-teal-200">
+							<Check size={14} /> Airport to city
+						</div>
+						<h2 className="mt-3 text-2xl font-bold tracking-tight" id="airport-departure-results-title">
+							Next buses to {result.destination.name}
+						</h2>
+						<p className="mt-1 text-xs leading-relaxed text-teal-100/60">
+							Compared across every active AeroExpress route serving this destination.
+						</p>
+					</div>
+					<a
+						href={directionsLink({ destination: result.destination, navigate: true })}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="inline-flex min-h-12 w-full items-center justify-center gap-2.5 rounded-xl border border-teal-300/30 bg-teal-300/10 px-4 py-2.5 text-sm font-bold text-teal-50 hover:bg-teal-300/15 focus-visible:outline-2 focus-visible:outline-offset-2 md:w-auto md:shrink-0"
+						onClick={() => trackEvent('journey_maps_opened', {
+							direction: 'from-airport',
+							stop_id: result.destination.placeId
+						})}
+					>
+						<Navigation size={18} className="shrink-0" aria-hidden="true" />
+						<span className="text-left leading-snug">
+							<span className="block text-xs text-teal-100/75">Boarded the bus?</span>
+							Track your journey to your stop
+						</span>
+					</a>
+				</header>
 
 			<div className="mt-6 grid gap-4">
 				{result.options.map((option, index) => {
